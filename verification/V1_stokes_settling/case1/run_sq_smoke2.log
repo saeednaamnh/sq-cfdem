@@ -1,0 +1,293 @@
+Decomposing case.
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  6
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 6-fa1285188035
+Exec   : decomposePar -force
+Date   : Jul 23 2026
+Time   : 09:11:20
+Host   : "saeed-Inspiron-5567"
+PID    : 24490
+I/O    : uncollated
+Case   : /home/saeed/sq-cfdem/verification/V1_stokes_settling/case1/CFD
+nProcs : 1
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Removing 4 existing processor directories
+
+
+Decomposing mesh region0
+
+Create mesh
+
+Calculating distribution of cells
+Selecting decompositionMethod simple
+
+Finished decomposition in 0 s
+
+Calculating original mesh data
+
+Distributing cells to processors
+
+Distributing faces to processors
+
+Distributing points to processors
+
+Constructing processor meshes
+
+Processor 0
+    Number of cells = 1152
+    Number of faces shared with processor 1 = 192
+    Number of faces shared with processor 2 = 192
+    Number of processor patches = 2
+    Number of processor faces = 384
+    Number of boundary faces = 288
+
+Processor 1
+    Number of cells = 1152
+    Number of faces shared with processor 0 = 192
+    Number of faces shared with processor 3 = 192
+    Number of processor patches = 2
+    Number of processor faces = 384
+    Number of boundary faces = 288
+
+Processor 2
+    Number of cells = 1152
+    Number of faces shared with processor 0 = 192
+    Number of faces shared with processor 3 = 192
+    Number of processor patches = 2
+    Number of processor faces = 384
+    Number of boundary faces = 288
+
+Processor 3
+    Number of cells = 1152
+    Number of faces shared with processor 1 = 192
+    Number of faces shared with processor 2 = 192
+    Number of processor patches = 2
+    Number of processor faces = 384
+    Number of boundary faces = 288
+
+Number of processor faces = 768
+Max number of cells = 1152 (0% above average 1152)
+Max number of processor patches = 2 (0% above average 2)
+Max number of faces between processors = 384 (0% above average 384)
+
+Time = 0
+
+Processor 0: field transfer
+Processor 1: field transfer
+Processor 2: field transfer
+Processor 3: field transfer
+
+End
+
+do nothing.
+
+//   run_parallel_cfdemSolverPiso_ErgunTestMPI_CFDDEM   //
+
+/home/saeed/sq-cfdem/verification/V1_stokes_settling/case1/CFD
+
+rm: cannot remove 'couplingFiles/*': No such file or directory
+no separate DEM run.
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  6
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 6-fa1285188035
+Exec   : cfdemSolverPisoSQ -parallel
+Date   : Jul 23 2026
+Time   : 09:11:21
+Host   : "saeed-Inspiron-5567"
+PID    : 24523
+I/O    : uncollated
+Case   : /home/saeed/sq-cfdem/verification/V1_stokes_settling/case1/CFD
+nProcs : 4
+Slaves : 
+3
+(
+"saeed-Inspiron-5567.24524"
+"saeed-Inspiron-5567.24525"
+"saeed-Inspiron-5567.24526"
+)
+
+Pstream initialized with:
+    floatTransfer      : 0
+    nProcsSimpleSum    : 0
+    commsType          : nonBlocking
+    polling iterations : 0
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+Reading field p
+
+Reading physical velocity field U
+Note: only if voidfraction at boundary is 1, U is superficial velocity!!!
+
+
+Reading momentum exchange field Ksl
+
+
+Reading voidfraction field voidfraction = (Vgas/Vparticle)
+
+Reading particle velocity field Us
+
+
+Creating density field rho
+
+Reading/calculating face flux field phi
+
+Generating interstitial face flux field phiByVoidfraction
+
+Selecting incompressible transport model Newtonian
+Selecting turbulence model type laminar
+Selecting laminar stress model Stokes
+No finite volume options present
+
+Reading g
+Selecting locateModel engineSuperquadric
+Selecting dataExchangeModel twoWayMPI
+Starting up LIGGGHTS for first time execution
+Executing input script '../DEM/in.liggghts_run'
+LIGGGHTS (Version LIGGGHTS-PUBLIC 3.8.0, compiled 2026-07-23-07:35:10 by saeed, git commit 3d5c00f20519e6bb6eb6756f51f1ad36564e649d)
+log             ../DEM/log.liggghts
+atom_style      superquadric
+atom_modify     map array
+communicate     single vel yes
+boundary        m m m
+newton          off
+units           si
+processors      2 2 1
+
+read_restart    ../DEM/post/restart/liggghts.restart
+Reading restart file ...
+WARNING: Restart file version does not match LIGGGHTS version (../read_restart.cpp:507)
+version 3 8
+version 3 8
+version 3 8
+   --> restart file = Version LIGGGHTS-PUBLIC 3.8.0, compiled 2026-07-23-07:26:28 by saeed, git commit 3d5c00f20519e6bb6eb6756f51f1ad36564e649d
+   --> LIGGGHTS = Version LIGGGHTS-PUBLIC 3.8.0, compiled 2026-07-23-07:35:10 by saeed, git commit 3d5c00f20519e6bb6eb6756f51f1ad36564e649d
+version 3 8
+  orthogonal box = (-0.015 -0.015 0) to (0.015 0.015 0.0553)
+  2 by 2 by 1 MPI processor grid
+WARNING: 
+	The contact model you specified is not located in any whitelist.
+	Because of this the model will be run in an unoptimized version (increasing runtime by up to 20%).
+	In order to optimize this model you have the following options:
+		(i)  Run the genAutoExamplesWhitelist.sh script in your LIGGGHTS(R) source folder to automatically parse the input script
+		(ii) Add the model combination by hand to your style_contact_model_user.whitelist that can be found in your LIGGGHTS(R) source folder
+		(iii) Use the ENABLE_MODEL_* flag when building with cmake.
+	If you perform one of the steps above LIGGGHTS(R) needs to be recompiled to generate the optimized code.
+
+ (../contact_models.h:365)
+  100 atoms
+
+neighbor        0.001 bin
+neigh_modify    delay 0
+
+fix  m1 all property/global youngsModulus peratomtype 5.e6
+fix  m2 all property/global poissonsRatio peratomtype 0.45
+fix  m3 all property/global coefficientRestitution peratomtypepair 1 0.3
+fix  m4 all property/global coefficientFriction peratomtypepair 1 0.5
+
+pair_style  gran model hertz tangential history surface superquadric
+WARNING: 
+	The contact model you specified is not located in any whitelist.
+	Because of this the model will be run in an unoptimized version (increasing runtime by up to 20%).
+	In order to optimize this model you have the following options:
+		(i)  Run the genAutoExamplesWhitelist.sh script in your LIGGGHTS(R) source folder to automatically parse the input script
+		(ii) Add the model combination by hand to your style_contact_model_user.whitelist that can be found in your LIGGGHTS(R) source folder
+		(iii) Use the ENABLE_MODEL_* flag when building with cmake.
+	If you perform one of the steps above LIGGGHTS(R) needs to be recompiled to generate the optimized code.
+
+ (../contact_models.h:365)
+pair_coeff  * *
+
+timestep    0.00001
+fix         gravi all gravity 9.81 vector 0.0 0.0 -1.0
+
+fix  zwalls1  all wall/gran model hertz tangential history surface superquadric primitive type 1 zplane 0.0
+WARNING: 
+	The contact model you specified is not located in any whitelist.
+	Because of this the model will be run in an unoptimized version (increasing runtime by up to 20%).
+	In order to optimize this model you have the following options:
+		(i)  Run the genAutoExamplesWhitelist.sh script in your LIGGGHTS(R) source folder to automatically parse the input script
+		(ii) Add the model combination by hand to your style_contact_model_user.whitelist that can be found in your LIGGGHTS(R) source folder
+		(iii) Use the ENABLE_MODEL_* flag when building with cmake.
+	If you perform one of the steps above LIGGGHTS(R) needs to be recompiled to generate the optimized code.
+
+ (../contact_models.h:365)
+Resetting global state of Fix history_zwalls1 Style property/atom from restart file info
+Resetting per-atom state of Fix history_zwalls1 Style property/atom from restart file info
+fix  zwalls2  all wall/gran model hertz tangential history surface superquadric primitive type 1 zplane 0.0553
+WARNING: 
+	The contact model you specified is not located in any whitelist.
+	Because of this the model will be run in an unoptimized version (increasing runtime by up to 20%).
+	In order to optimize this model you have the following options:
+		(i)  Run the genAutoExamplesWhitelist.sh script in your LIGGGHTS(R) source folder to automatically parse the input script
+		(ii) Add the model combination by hand to your style_contact_model_user.whitelist that can be found in your LIGGGHTS(R) source folder
+		(iii) Use the ENABLE_MODEL_* flag when building with cmake.
+	If you perform one of the steps above LIGGGHTS(R) needs to be recompiled to generate the optimized code.
+
+ (../contact_models.h:365)
+Resetting global state of Fix history_zwalls2 Style property/atom from restart file info
+Resetting per-atom state of Fix history_zwalls2 Style property/atom from restart file info
+fix  cylwalls all wall/gran model hertz tangential history surface superquadric primitive type 1 zcylinder 0.01385 0. 0.
+WARNING: 
+	The contact model you specified is not located in any whitelist.
+	Because of this the model will be run in an unoptimized version (increasing runtime by up to 20%).
+	In order to optimize this model you have the following options:
+		(i)  Run the genAutoExamplesWhitelist.sh script in your LIGGGHTS(R) source folder to automatically parse the input script
+		(ii) Add the model combination by hand to your style_contact_model_user.whitelist that can be found in your LIGGGHTS(R) source folder
+		(iii) Use the ENABLE_MODEL_* flag when building with cmake.
+	If you perform one of the steps above LIGGGHTS(R) needs to be recompiled to generate the optimized code.
+
+ (../contact_models.h:365)
+Resetting global state of Fix history_cylwalls Style property/atom from restart file info
+Resetting per-atom state of Fix history_cylwalls Style property/atom from restart file info
+
+# cfd coupling
+fix  cfd  all couple/cfd couple_every 100 mpi
+couple_every as specified in LIGGGHTS is overriden by calling external program (../fix_cfd_coupling.cpp:114)
+fix  cfd2 all couple/cfd/force/implicit
+
+fix  integr all nve/superquadric integration_scheme 1
+
+compute  centerOfMass all com
+variable time equal step*dt
+
+thermo_style    custom step atoms ke c_centerOfMass[3]
+thermo          10
+thermo_modify   lost ignore norm no
+
+dump  dmp all custom 5000 ../DEM/post/dump*.liggghts_run id type x y z vx vy vz fx fy fz quatw quati quatj quatk shapex shapey shapez
+ERROR: Invalid attribute in dump custom command (../dump_custom.cpp:146)
+-------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code.. Per user-direction, the job has been aborted.
+-------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun detected that one or more processes exited with non-zero status, thus causing
+the job to be terminated. The first process to do so was:
+
+  Process name: [[17744,1],0]
+  Exit code:    1
+--------------------------------------------------------------------------
+deleting data at: /home/saeed/sq-cfdem/verification/V1_stokes_settling/case1 ? otherwise press Ctrl-C:\n

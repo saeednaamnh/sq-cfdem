@@ -1,0 +1,43 @@
+wmake libso .
+wmakeLnInclude: linking include files to ./lnInclude
+Making dependency list for source file spheroidLiftTorque.C
+Making dependency list for source file HolzerSommerfeldDrag.C
+Making dependency list for source file dividedVoidFractionSuperquadric.C
+Making dependency list for source file cfdemCloudRotationSuperquadric.C
+g++ -std=c++11 -m64 -Dlinux64 -DWM_ARCH_OPTION=64 -DWM_DP -DWM_LABEL_SIZE=32 -Wall -Wextra -Wold-style-cast -Wnon-virtual-dtor -Wno-unused-parameter -Wno-invalid-offsetof -Wno-attributes -O3  -DNoRepository -ftemplate-depth-100 -DOMPI_SKIP_MPICXX -I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/opal/mca/event/libevent2022/libevent -I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/opal/mca/event/libevent2022/libevent/include -I/usr/lib/x86_64-linux-gnu/openmpi/include -pthread -I/opt/openfoam6/src/finiteVolume/lnInclude -I/opt/openfoam6/src/meshTools/lnInclude -I/opt/openfoam6/src/TurbulenceModels/turbulenceModels/lnInclude -I/opt/openfoam6/src/TurbulenceModels/incompressible/lnInclude -I/opt/openfoam6/src/transportModels -I/opt/openfoam6/src/transportModels/incompressible/singlePhaseTransportModel -I/home/saeed/CFDEM/CFDEMcoupling-PUBLIC/src/lagrangian/cfdemParticle/lnInclude -I/home/saeed/CFDEM/CFDEMcoupling-PUBLIC/src/lagrangian/cfdemParticle/cfdTools -I/home/saeed/LIGGGHTS/LIGGGHTS-PUBLIC/src -I./common -DMS -Dsuperquadrics_flag -DSUPERQUADRIC_ACTIVE_FLAG -DNONSPHERICAL_ACTIVE_FLAG -DCFDEMWMPROJECTVERSION=60 -IlnInclude -I. -I/opt/openfoam6/src/OpenFOAM/lnInclude -I/opt/openfoam6/src/OSspecific/POSIX/lnInclude   -fPIC -c cfdemCloudRotationSuperquadric/cfdemCloudRotationSuperquadric.C -o Make/linux64GccDPInt32Opt/cfdemCloudRotationSuperquadric/cfdemCloudRotationSuperquadric.o
+g++ -std=c++11 -m64 -Dlinux64 -DWM_ARCH_OPTION=64 -DWM_DP -DWM_LABEL_SIZE=32 -Wall -Wextra -Wold-style-cast -Wnon-virtual-dtor -Wno-unused-parameter -Wno-invalid-offsetof -Wno-attributes -O3  -DNoRepository -ftemplate-depth-100 -DOMPI_SKIP_MPICXX -I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/opal/mca/event/libevent2022/libevent -I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi/opal/mca/event/libevent2022/libevent/include -I/usr/lib/x86_64-linux-gnu/openmpi/include -pthread -I/opt/openfoam6/src/finiteVolume/lnInclude -I/opt/openfoam6/src/meshTools/lnInclude -I/opt/openfoam6/src/TurbulenceModels/turbulenceModels/lnInclude -I/opt/openfoam6/src/TurbulenceModels/incompressible/lnInclude -I/opt/openfoam6/src/transportModels -I/opt/openfoam6/src/transportModels/incompressible/singlePhaseTransportModel -I/home/saeed/CFDEM/CFDEMcoupling-PUBLIC/src/lagrangian/cfdemParticle/lnInclude -I/home/saeed/CFDEM/CFDEMcoupling-PUBLIC/src/lagrangian/cfdemParticle/cfdTools -I/home/saeed/LIGGGHTS/LIGGGHTS-PUBLIC/src -I./common -DMS -Dsuperquadrics_flag -DSUPERQUADRIC_ACTIVE_FLAG -DNONSPHERICAL_ACTIVE_FLAG -DCFDEMWMPROJECTVERSION=60 -IlnInclude -I. -I/opt/openfoam6/src/OpenFOAM/lnInclude -I/opt/openfoam6/src/OSspecific/POSIX/lnInclude   -fPIC -c voidFractionModel/dividedVoidFractionSuperquadric/dividedVoidFractionSuperquadric.C -o Make/linux64GccDPInt32Opt/voidFractionModel/dividedVoidFractionSuperquadric/dividedVoidFractionSuperquadric.o
+voidFractionModel/dividedVoidFractionSuperquadric/dividedVoidFractionSuperquadric.C: In member function ‘virtual void Foam::dividedVoidFractionSuperquadric::setvoidFraction(double** const&, double**&, double**&, double**&, double**&) const’:
+voidFractionModel/dividedVoidFractionSuperquadric/dividedVoidFractionSuperquadric.C:113:45: error: ‘class Foam::cfdemCloud’ has no member named ‘shapeArray’; did you mean ‘shape’?
+         const vector shape = particleCloud_.shapeArray(index);   // (a,b,c)
+                                             ^~~~~~~~~~
+                                             shape
+voidFractionModel/dividedVoidFractionSuperquadric/dividedVoidFractionSuperquadric.C:118:24: error: ‘class Foam::cfdemCloud’ has no member named ‘quatComponents’
+         particleCloud_.quatComponents(index,qw,qx,qy,qz);
+                        ^~~~~~~~~~~~~~
+voidFractionModel/dividedVoidFractionSuperquadric/dividedVoidFractionSuperquadric.C:141:71: error: binding reference of type ‘Foam::vector& {aka Foam::Vector<double>&}’ to ‘const vector {aka const Foam::Vector<double>}’ discards qualifiers
+                 particleCloud_.locateM().findSingleCell(xw, cellCentre);
+                                                                       ^
+In file included from /home/saeed/CFDEM/CFDEMcoupling-PUBLIC/src/lagrangian/cfdemParticle/lnInclude/cfdemCloudI.H:40:0,
+                 from /home/saeed/CFDEM/CFDEMcoupling-PUBLIC/src/lagrangian/cfdemParticle/lnInclude/cfdemCloud.H:664,
+                 from /home/saeed/CFDEM/CFDEMcoupling-PUBLIC/src/lagrangian/cfdemParticle/lnInclude/voidFractionModel.H:46,
+                 from voidFractionModel/dividedVoidFractionSuperquadric/dividedVoidFractionSuperquadric.H:5,
+                 from voidFractionModel/dividedVoidFractionSuperquadric/dividedVoidFractionSuperquadric.C:29:
+/home/saeed/CFDEM/CFDEMcoupling-PUBLIC/src/lagrangian/cfdemParticle/lnInclude/locateModel.H:117:23: note:   initializing argument 1 of ‘virtual Foam::label Foam::locateModel::findSingleCell(Foam::vector&, Foam::label&) const’
+         virtual label findSingleCell
+                       ^~~~~~~~~~~~~~
+voidFractionModel/dividedVoidFractionSuperquadric/dividedVoidFractionSuperquadric.C:162:21: error: ‘cellIDs_’ was not declared in this scope
+                     cellIDs_[index][slot] = cellI;
+                     ^~~~~~~~
+voidFractionModel/dividedVoidFractionSuperquadric/dividedVoidFractionSuperquadric.C:162:21: note: suggested alternative: ‘cellList’
+                     cellIDs_[index][slot] = cellI;
+                     ^~~~~~~~
+                     cellList
+voidFractionModel/dividedVoidFractionSuperquadric/dividedVoidFractionSuperquadric.C:193:33: error: ‘cellIDs_’ was not declared in this scope
+             const label cellI = cellIDs_[index][s];
+                                 ^~~~~~~~
+voidFractionModel/dividedVoidFractionSuperquadric/dividedVoidFractionSuperquadric.C:193:33: note: suggested alternative: ‘cellList’
+             const label cellI = cellIDs_[index][s];
+                                 ^~~~~~~~
+                                 cellList
+/opt/openfoam6/wmake/rules/General/transform:25: recipe for target 'Make/linux64GccDPInt32Opt/voidFractionModel/dividedVoidFractionSuperquadric/dividedVoidFractionSuperquadric.o' failed
+make: *** [Make/linux64GccDPInt32Opt/voidFractionModel/dividedVoidFractionSuperquadric/dividedVoidFractionSuperquadric.o] Error 1

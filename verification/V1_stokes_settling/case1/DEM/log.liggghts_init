@@ -1,0 +1,134 @@
+atom_style      superquadric
+atom_modify     map array
+communicate     single vel yes
+boundary        m m m
+newton          off
+units           si
+processors      2 2 1
+
+region          reg block -0.015 0.015 -0.015 0.015 0.0 0.0553 units box
+create_box      1 reg
+Created orthogonal box = (-0.015 -0.015 0) to (0.015 0.015 0.0553)
+  2 by 2 by 1 MPI processor grid
+
+neighbor        0.001 bin
+neigh_modify    delay 0
+
+fix  m1 all property/global youngsModulus peratomtype 5.e6
+fix  m2 all property/global poissonsRatio peratomtype 0.45
+fix  m3 all property/global coefficientRestitution peratomtypepair 1 0.3
+fix  m4 all property/global coefficientFriction peratomtypepair 1 0.5
+
+pair_style  gran model hertz tangential history surface superquadric
+WARNING: 
+	The contact model you specified is not located in any whitelist.
+	Because of this the model will be run in an unoptimized version (increasing runtime by up to 20%).
+	In order to optimize this model you have the following options:
+		(i)  Run the genAutoExamplesWhitelist.sh script in your LIGGGHTS(R) source folder to automatically parse the input script
+		(ii) Add the model combination by hand to your style_contact_model_user.whitelist that can be found in your LIGGGHTS(R) source folder
+		(iii) Use the ENABLE_MODEL_* flag when building with cmake.
+	If you perform one of the steps above LIGGGHTS(R) needs to be recompiled to generate the optimized code.
+
+ (../contact_models.h:365)
+pair_coeff  * *
+
+timestep    0.00001
+fix         gravi all gravity 9.81 vector 0.0 0.0 -1.0
+
+fix  zwalls1  all wall/gran model hertz tangential history surface superquadric primitive type 1 zplane 0.0
+WARNING: 
+	The contact model you specified is not located in any whitelist.
+	Because of this the model will be run in an unoptimized version (increasing runtime by up to 20%).
+	In order to optimize this model you have the following options:
+		(i)  Run the genAutoExamplesWhitelist.sh script in your LIGGGHTS(R) source folder to automatically parse the input script
+		(ii) Add the model combination by hand to your style_contact_model_user.whitelist that can be found in your LIGGGHTS(R) source folder
+		(iii) Use the ENABLE_MODEL_* flag when building with cmake.
+	If you perform one of the steps above LIGGGHTS(R) needs to be recompiled to generate the optimized code.
+
+ (../contact_models.h:365)
+fix  zwalls2  all wall/gran model hertz tangential history surface superquadric primitive type 1 zplane 0.0553
+WARNING: 
+	The contact model you specified is not located in any whitelist.
+	Because of this the model will be run in an unoptimized version (increasing runtime by up to 20%).
+	In order to optimize this model you have the following options:
+		(i)  Run the genAutoExamplesWhitelist.sh script in your LIGGGHTS(R) source folder to automatically parse the input script
+		(ii) Add the model combination by hand to your style_contact_model_user.whitelist that can be found in your LIGGGHTS(R) source folder
+		(iii) Use the ENABLE_MODEL_* flag when building with cmake.
+	If you perform one of the steps above LIGGGHTS(R) needs to be recompiled to generate the optimized code.
+
+ (../contact_models.h:365)
+fix  cylwalls all wall/gran model hertz tangential history surface superquadric primitive type 1 zcylinder 0.01385 0. 0.
+WARNING: 
+	The contact model you specified is not located in any whitelist.
+	Because of this the model will be run in an unoptimized version (increasing runtime by up to 20%).
+	In order to optimize this model you have the following options:
+		(i)  Run the genAutoExamplesWhitelist.sh script in your LIGGGHTS(R) source folder to automatically parse the input script
+		(ii) Add the model combination by hand to your style_contact_model_user.whitelist that can be found in your LIGGGHTS(R) source folder
+		(iii) Use the ENABLE_MODEL_* flag when building with cmake.
+	If you perform one of the steps above LIGGGHTS(R) needs to be recompiled to generate the optimized code.
+
+ (../contact_models.h:365)
+
+# c/a = 2 prolate spheroids: a=b=0.6785 mm, c=1.357 mm  (dEq ~ 1.71 mm)
+fix  pts1 all particletemplate/superquadric 15485863 atom_type 1 density constant 2000 shape constant 0.0006785 0.0006785 0.001357 blockiness constant 2.0 2.0
+fix  pdd1 all particledistribution/discrete 32452843 1 pts1 1.0
+
+region insReg cylinder z 0.0 0.0 0.0115 0.010 0.050 units box
+fix ins all insert/pack seed 32452867 distributiontemplate pdd1 insert_every once overlapcheck yes all_in yes particles_in_region 100 region insReg
+
+fix  integr all nve/superquadric integration_scheme 1
+
+thermo_style    custom step atoms ke
+thermo          1000
+thermo_modify   lost ignore norm no
+
+run     20000 upto
+Setting up run at Thu Jul 23 09:00:38 2026
+
+INFO: Particle insertion ins: inserting every 0 steps
+Memory usage per processor = 9.60227 Mbytes
+    Step    Atoms         KinEng 
+       0        0              0 
+INFO: Particle insertion ins: inserted 100 particle templates (mass 5.233571e-04) at step 1
+ - a total of 100 particle templates (mass 5.233571e-04) inserted so far.
+    1000      100  2.5157749e-06 
+    2000      100  1.0068134e-05 
+    3000      100  2.2657078e-05 
+    4000      100  4.0282608e-05 
+    5000      100  5.8879318e-05 
+    6000      100  7.0186486e-05 
+    7000      100  7.6805801e-05 
+    8000      100  6.8668041e-05 
+    9000      100  3.4473865e-05 
+   10000      100   4.995757e-06 
+   11000      100  2.1677628e-06 
+   12000      100  1.6343253e-06 
+   13000      100  1.4635873e-06 
+   14000      100  8.1040513e-07 
+   15000      100  6.2416931e-07 
+   16000      100  6.2468508e-07 
+   17000      100   2.319622e-07 
+   18000      100  2.2224169e-07 
+   19000      100  2.1064763e-07 
+   20000      100  1.4237173e-07 
+Loop time of 2.7169 on 4 procs for 20000 steps with 100 atoms, finish time Thu Jul 23 09:00:40 2026
+
+
+Pair  time (%) = 0.889588 (32.7428)
+Neigh time (%) = 0.00434133 (0.15979)
+Comm  time (%) = 0.454252 (16.7195)
+Outpt time (%) = 0.00417807 (0.153781)
+Other time (%) = 1.36454 (50.2241)
+
+Nlocal:    25 ave 29 max 21 min
+Histogram: 1 0 1 0 0 0 0 1 0 1
+Nghost:    19.75 ave 22 max 18 min
+Histogram: 1 0 1 0 0 1 0 0 0 1
+Neighs:    90.5 ave 121 max 62 min
+Histogram: 1 0 1 0 0 0 1 0 0 1
+
+Total # of neighbors = 362
+Ave neighs/atom = 3.62
+Neighbor list builds = 131
+Dangerous builds = 0
+write_restart   ../DEM/post/restart/liggghts.restart
