@@ -13,3 +13,5 @@ DEM/restarts/
 lnInclude/
 Make/linux*
 platforms/
+log_solve.txt
+**/results/
