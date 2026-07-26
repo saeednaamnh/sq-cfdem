@@ -3,4 +3,5 @@ cfdemCloudRotationSuperquadric/cfdemCloudRotationSuperquadric.C \
 voidFractionModel/dividedVoidFractionSuperquadric/dividedVoidFractionSuperquadric.C \
 locateModel/engineSearchSuperquadric/engineSearchSuperquadric.C \
 forceModel/HolzerSommerfeldDrag/HolzerSommerfeldDrag.C \
-forceModel/spheroidLiftTorque/spheroidLiftTorque.C 
+forceModel/spheroidLiftTorque/spheroidLiftTorque.C \
+forceModel/spheroidRotationTorque/spheroidRotationTorque.C 

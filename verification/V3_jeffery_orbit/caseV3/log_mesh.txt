@@ -1,0 +1,79 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  6
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 6-fa1285188035
+Exec   : blockMesh
+Date   : Jul 26 2026
+Time   : 06:01:03
+Host   : "saeed-Inspiron-5567"
+PID    : 6306
+I/O    : uncollated
+Case   : /home/saeed/sq-cfdem/verification/V3_jeffery_orbit/caseV3/CFD
+nProcs : 1
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Deleting polyMesh directory
+    "/home/saeed/sq-cfdem/verification/V3_jeffery_orbit/caseV3/CFD/constant/polyMesh"
+Creating block mesh from
+    "/home/saeed/sq-cfdem/verification/V3_jeffery_orbit/caseV3/CFD/system/blockMeshDict"
+Creating block edges
+No non-planar block faces defined
+Creating topology blocks
+Creating topology patches
+
+Creating block mesh topology
+
+Check topology
+
+	Basic statistics
+		Number of internal faces : 0
+		Number of boundary faces : 6
+		Number of defined boundary faces : 6
+		Number of undefined boundary faces : 0
+	Checking patch -> block consistency
+
+Creating block offsets
+Creating merge list .
+
+Creating polyMesh from blockMesh
+Creating patches
+Creating cells
+Creating points with scale 1
+    Block 0 cell size :
+        i : 0.005 .. 0.005
+        j : 0.005 .. 0.005
+        k : 0.005 .. 0.005
+
+
+Detected cyclic patches; ordering boundary faces
+
+Writing polyMesh
+----------------
+Mesh Information
+----------------
+  boundingBox: (-0.01 -0.01 -0.01) (0.01 0.01 0.01)
+  nPoints: 125
+  nCells: 64
+  nFaces: 240
+  nInternalFaces: 144
+----------------
+Patches
+----------------
+  patch 0 (start: 144 size: 16) name: cycXa
+  patch 1 (start: 160 size: 16) name: cycXb
+  patch 2 (start: 176 size: 16) name: cycYa
+  patch 3 (start: 192 size: 16) name: cycYb
+  patch 4 (start: 208 size: 16) name: wallBottom
+  patch 5 (start: 224 size: 16) name: wallTop
+
+End
+

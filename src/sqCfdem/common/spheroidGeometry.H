@@ -152,6 +152,22 @@ inline scalar CtSpheroid(const scalar Re, const scalar sinA, const scalar cosA,
     return g1/std::pow(std::max(Re,1e-12), g2)*sinA*cosA;
 }
 
+
+//- Rotational resistance functions for a prolate spheroid (Kim & Karrila).
+//  Torque: T = 8 pi mu a^2 c [ XC dW_par + YC dW_perp + YH k x (E.k) ],
+//  dW = 0.5 curl(u) - omega_p. Sphere limit: (XC,YC,YH) -> (1,1,0) so
+//  T -> 8 pi mu R^3 (W_f - w_p). Identity YH/YC = Bretherton B(lam)
+//  guarantees torque-free particles follow Jeffery's equation exactly.
+inline void rotResist(const scalar a, const scalar c,
+                      scalar& XC, scalar& YC, scalar& YH)
+{
+    if (c <= a*(1.0+1e-12)) { XC=1.0; YC=1.0; YH=0.0; return; }
+    const scalar e = std::sqrt(1.0 - (a*a)/(c*c));
+    const scalar L = std::log((1.0+e)/(1.0-e));
+    XC = (4.0/3.0)*e*e*e*(1.0-e*e)/( 2.0*e - (1.0-e*e)*L);
+    YC = (4.0/3.0)*e*e*e*(2.0-e*e)/(-2.0*e + (1.0+e*e)*L);
+    YH = (4.0/3.0)*e*e*e*e*e      /(-2.0*e + (1.0+e*e)*L);
+}
 } // namespace sqGeom
 } // namespace Foam
 

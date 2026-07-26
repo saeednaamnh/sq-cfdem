@@ -27,14 +27,8 @@ spheroidLiftTorque::spheroidLiftTorque(const dictionary& dict, cfdemCloud& sm)
     g1_(readScalar(propsDict_.lookup("torquePrefactor"))),
     g2_(readScalar(propsDict_.lookup("torqueReExponent"))),
     spinDamping_(propsDict_.lookupOrDefault<Switch>("spinDamping", true)),
-    sqCloud_(dynamic_cast<cfdemCloudRotationSuperquadric*>(&sm))
+    sqCloud_(nullptr)   // cast deferred: cloud not fully constructed yet
 {
-    if (!sqCloud_)
-    {
-        FatalError << "spheroidLiftTorque requires the superquadric cloud "
-                   << "(use cfdemSolverPisoSQ, not a sphere solver)."
-                   << abort(FatalError);
-    }
     setForceSubModels(propsDict_);
     forceSubM(0).readSwitches();
 }
@@ -43,6 +37,13 @@ spheroidLiftTorque::~spheroidLiftTorque() {}
 
 void spheroidLiftTorque::setForce() const
 {
+    if (!sqCloud_)
+    {
+        sqCloud_ = dynamic_cast<cfdemCloudRotationSuperquadric*>(&particleCloud_);
+        if (!sqCloud_)
+            FatalError << "spheroidLiftTorque requires the superquadric cloud "
+                       << "(cfdemSolverPisoSQ)." << abort(FatalError);
+    }
     const volScalarField& nufField = forceSubM(0).nuField();
     const volScalarField& rhoField = forceSubM(0).rhoField();
 

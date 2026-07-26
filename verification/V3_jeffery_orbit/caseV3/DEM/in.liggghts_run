@@ -1,0 +1,39 @@
+# V3 run: free rotation under hydrodynamic torque (Jeffery test)
+echo            both
+log             ../DEM/log.liggghts
+atom_style      superquadric
+atom_modify     map array
+communicate     single vel yes
+boundary        p p f
+newton          off
+units           si
+processors      2 2 1
+
+read_restart    ../DEM/post/restart/liggghts.restart
+neighbor        0.001 bin
+neigh_modify    delay 0
+
+fix  m1 all property/global youngsModulus peratomtype 5.e6
+fix  m2 all property/global poissonsRatio peratomtype 0.45
+fix  m3 all property/global coefficientRestitution peratomtypepair 1 0.3
+fix  m4 all property/global coefficientFriction peratomtypepair 1 0.5
+
+pair_style  gran model hertz tangential history surface superquadric
+pair_coeff  * *
+timestep    0.00001
+
+fix  cfd  all couple/cfd couple_every 50 mpi
+fix  cfd2 all couple/cfd/force/implicit transfer_torque yes
+
+# rotation ON this time (translation too; drag holds it near centre)
+fix  integrate free nve/superquadric integration_scheme 1
+
+thermo_style    custom step atoms ke
+thermo          10000
+thermo_modify   lost ignore norm no
+
+# orientation time series: every 500 DEM steps = 5 ms
+dump dq free custom 500 ../DEM/post/quat_v3.txt id quat1 quat2 quat3 quat4
+dump_modify dq first yes
+
+run 0

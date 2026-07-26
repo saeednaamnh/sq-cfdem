@@ -19,7 +19,7 @@ class spheroidLiftTorque
     scalar f1_, f2_;   // lift prefactor/exponent
     scalar g1_, g2_;   // pitching torque prefactor/exponent
     Switch spinDamping_;
-    cfdemCloudRotationSuperquadric* sqCloud_;
+    mutable cfdemCloudRotationSuperquadric* sqCloud_;
 
 public:
     TypeName("spheroidLiftTorque");

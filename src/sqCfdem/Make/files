@@ -3,5 +3,6 @@ voidFractionModel/dividedVoidFractionSuperquadric/dividedVoidFractionSuperquadri
 locateModel/engineSearchSuperquadric/engineSearchSuperquadric.C
 forceModel/HolzerSommerfeldDrag/HolzerSommerfeldDrag.C
 forceModel/spheroidLiftTorque/spheroidLiftTorque.C
+forceModel/spheroidRotationTorque/spheroidRotationTorque.C
 
 LIB = $(FOAM_USER_LIBBIN)/libsqCfdem

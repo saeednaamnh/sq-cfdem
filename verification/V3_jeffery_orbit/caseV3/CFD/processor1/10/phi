@@ -1,0 +1,109 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  6
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       surfaceScalarField;
+    location    "10";
+    object      phi;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 3 -1 0 0 0 0];
+
+internalField   nonuniform List<scalar> 
+28
+(
+-3.750739e-07
+-1.447577e-13
+-7.334918e-13
+-2.694546e-11
+-5.408983e-11
+-3.751023e-07
+-1.318564e-12
+-1.168578e-10
+-1.251306e-07
+3.362694e-14
+-1.495983e-12
+-8.873451e-11
+-6.504163e-11
+-1.252089e-07
+-2.950109e-12
+-2.992438e-10
+1.24846e-07
+7.421847e-13
+-1.192042e-12
+-1.724401e-10
+-5.224452e-12
+1.245973e-07
+-1.571497e-12
+1.029101e-10
+3.749554e-07
+-5.374622e-14
+-5.292124e-11
+3.749188e-07
+)
+;
+
+boundaryField
+{
+    cycXa
+    {
+        type            cyclic;
+        value           nonuniform 0();
+    }
+    cycXb
+    {
+        type            cyclic;
+        value           nonuniform 0();
+    }
+    cycYa
+    {
+        type            cyclic;
+        value           nonuniform 0();
+    }
+    cycYb
+    {
+        type            cyclic;
+        value           nonuniform 0();
+    }
+    wallBottom
+    {
+        type            calculated;
+        value           uniform 0;
+    }
+    wallTop
+    {
+        type            calculated;
+        value           uniform 0;
+    }
+    procBoundary1to0
+    {
+        type            processor;
+        value           nonuniform List<scalar> 8(3.750749e-07 3.751038e-07 1.251313e-07 1.252103e-07 -1.248478e-07 -1.245983e-07 -3.749565e-07 -3.749198e-07);
+    }
+    procBoundary1to0throughcycXb
+    {
+        type            processorCyclic;
+        value           nonuniform List<scalar> 8(-3.749659e-07 -3.749613e-07 -1.249422e-07 -1.249064e-07 1.251311e-07 1.253896e-07 3.750561e-07 3.751221e-07);
+    }
+    procBoundary1to3
+    {
+        type            processor;
+        value           nonuniform List<scalar> 8(-3.004189e-13 -5.111704e-11 3.07372e-13 -2.088114e-10 3.159276e-13 -1.36681e-09 -5.659817e-13 -1.533779e-10);
+    }
+    procBoundary1to3throughcycYa
+    {
+        type            processorCyclic;
+        value           nonuniform List<scalar> 8(-1.440029e-13 3.553962e-14 7.445149e-13 -5.271799e-14 -2.694462e-11 -8.873228e-11 -1.724372e-10 -5.291997e-11);
+    }
+}
+
+
+// ************************************************************************* //
