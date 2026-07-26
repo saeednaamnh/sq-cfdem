@@ -1,0 +1,15 @@
+*.log
+log_*
+log.liggghts*
+log.lammps*
+CFD/processor*
+CFD/postProcessing
+CFD/[0-9]*
+DEM/post/
+DEM/results/
+DEM/restarts/
+*.restart*
+*.liggghts
+lnInclude/
+Make/linux*
+platforms/

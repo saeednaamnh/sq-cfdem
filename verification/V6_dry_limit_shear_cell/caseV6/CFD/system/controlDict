@@ -1,0 +1,16 @@
+FoamFile { version 2.0; format ascii; class dictionary; object controlDict; }
+application     cfdemSolverPisoSQ;
+startFrom       startTime;
+startTime       0;
+stopAt          endTime;
+// smoke: 100000 DEM steps * 4.066227e-05 = 4.07; production (5M): 203.4
+endTime         4.07;
+deltaT          4.066227e-03;
+writeControl    adjustableRunTime;
+writeInterval   1.0;
+purgeWrite      3;
+writeFormat     ascii;
+writePrecision  7;
+timeFormat      general;
+timePrecision   6;
+runTimeModifiable yes;

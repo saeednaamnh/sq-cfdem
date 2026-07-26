@@ -1,0 +1,149 @@
+# ============================================================================
+# SHEAR: prolate_3 (c/a = 3.0)
+# Semi-axes: a=0.2371, b=0.2371, c=0.7114
+# ============================================================================
+
+variable    N_STEPS     equal   100000   # smoke; production: 5000000
+variable    a           equal   0.2371
+variable    b           equal   0.2371
+variable    c           equal   0.7114
+variable    wall_vel    equal   1.0
+variable    e_n         equal   0.98
+variable    N_particles equal   3804
+variable    kn_val      equal   200000.0
+variable    mu_friction equal   0.0
+
+variable    diameter    equal   2*${a}
+variable    V_particle  equal   (4.0/3.0)*PI*${a}*${b}*${c}
+variable    m_particle  equal   1.0*${V_particle}
+variable    m_ij        equal   ${m_particle}/2.0
+variable    eta0        equal   sqrt(${kn_val}/${m_ij}*(ln(${e_n}))^2/(PI^2+(ln(${e_n}))^2))
+variable    damping_n   equal   2.0*${m_ij}*${eta0}
+variable    omega0      equal   sqrt(${kn_val}/${m_ij}-${eta0}^2)
+variable    t_contact   equal   PI/${omega0}
+variable    dt          equal   ${t_contact}/50.0
+variable    damp_sc     equal   ${damping_n}/${m_ij}
+variable    wall_r      equal   ${diameter}/2.0
+
+atom_style      superquadric
+units           si
+boundary        p p f
+newton          off
+communicate     multi cutoff 0.01 vel yes
+
+read_restart    ../DEM/restarts/restart_placed.liggghts
+
+neighbor        0.15 bin
+neigh_modify    delay 0 every 1 check yes
+timestep        ${dt}
+
+# Material properties
+fix  p_E  all property/global youngsModulus peratomtype 6e6 6e6 6e6
+fix  p_nu all property/global poissonsRatio peratomtype 0.3 0.3 0.3
+fix  p_e  all property/global coefficientRestitution peratomtypepair 3 ${e_n} ${e_n} ${e_n} ${e_n} ${e_n} ${e_n} ${e_n} ${e_n} ${e_n}
+fix  p_mu all property/global coefficientFriction peratomtypepair 3 ${mu_friction} ${mu_friction} ${mu_friction} ${mu_friction} ${mu_friction} ${mu_friction} ${mu_friction} ${mu_friction} ${mu_friction}
+fix  p_cv all property/global characteristicVelocity scalar 2.0
+fix  p_kn all property/global kn peratomtypepair 3 ${kn_val} ${kn_val} ${kn_val} ${kn_val} ${kn_val} ${kn_val} ${kn_val} ${kn_val} ${kn_val}
+fix  p_gn all property/global gamman peratomtypepair 3 ${damp_sc} ${damp_sc} ${damp_sc} ${damp_sc} ${damp_sc} ${damp_sc} ${damp_sc} ${damp_sc} ${damp_sc}
+fix  p_kt all property/global kt peratomtypepair 3 0 0 0 0 0 0 0 0 0
+fix  p_gt all property/global gammat peratomtypepair 3 0 0 0 0 0 0 0 0 0
+
+pair_style      gran model hooke tangential history surface superquadric
+pair_coeff      * *
+
+# --- CFD coupling (V6 dry-limit: fluid forces ~1e-6 of contact forces) ---
+fix  cfd  all couple/cfd couple_every 100 mpi
+fix  cfd2 all couple/cfd/force/implicit transfer_torque yes
+
+fix  integrate layerGroup nve/superquadric integration_scheme 1
+
+# Geometry
+variable    z_lo    equal   xcm(lowerGroup,z)-${wall_r}
+variable    z_hi    equal   xcm(upperGroup,z)+${wall_r}
+variable    H_gap   equal   v_z_hi-v_z_lo-2.0*${diameter}
+variable    vfrac   equal   3804*${V_particle}/(lx*ly*v_H_gap)
+variable    gdot    equal   2.0*${wall_vel}/v_H_gap
+
+# Velocity fluctuations & granular temperature
+compute     vprop   layerGroup property/atom vx vy vz
+compute     vsum    all reduce sum c_vprop[1] c_vprop[2] c_vprop[3]
+variable    vxm     equal   c_vsum[1]/5000
+variable    vym     equal   c_vsum[2]/5000
+variable    vzm     equal   c_vsum[3]/5000
+variable    dvx2    atom    (vx-v_vxm)^2
+variable    dvy2    atom    (vy-v_vym)^2
+variable    dvz2    atom    (vz-v_vzm)^2
+compute     vfx     layerGroup reduce sum v_dvx2
+compute     vfy     layerGroup reduce sum v_dvy2
+compute     vfz     layerGroup reduce sum v_dvz2
+variable    Tgran   equal   (c_vfx+c_vfy+c_vfz)/(3.0*5000)
+
+# Stresses
+compute     sa_free     layerGroup stress/atom
+compute     s_sum       all reduce sum c_sa_free[1] c_sa_free[2] c_sa_free[3] c_sa_free[4] c_sa_free[5] c_sa_free[6]
+variable    sig_xx  equal c_s_sum[1]/${V_particle}
+variable    sig_yy  equal c_s_sum[2]/${V_particle}
+variable    sig_zz  equal c_s_sum[3]/${V_particle}
+variable    sig_xz  equal c_s_sum[5]/${V_particle}
+variable    pressure equal (v_sig_xx+v_sig_yy+v_sig_zz)/3.0
+
+# Wall forces
+variable    lo_Fx   equal fcm(lowerGroup,x)
+variable    up_Fx   equal fcm(upperGroup,x)
+
+# Position/velocity of groups
+variable    step_v  equal step
+variable    time_v  equal time
+variable    ke_v    equal ke
+
+compute     rke all erotate/superquadric
+thermo_style custom step atoms time ke c_rke vol v_Tgran v_vfrac
+thermo_modify   lost warn
+thermo      100
+
+# Output
+shell mkdir -p ../DEM/results/shear
+shell mkdir -p ../DEM/results/shear/profiles
+
+variable    Nslice  equal 25
+variable    Lx_val  equal lx
+variable    Ly_val  equal ly
+variable    dz      equal v_H_gap/${Nslice}
+
+fix log_T    all print 100 "${step_v} ${time_v} ${Tgran}" file ../DEM/results/shear/granular_temp.txt screen no
+fix log_s    all print 100 "${step_v} ${time_v} ${pressure} ${sig_xx} ${sig_yy} ${sig_zz} ${sig_xz}" file ../DEM/results/shear/bulk_stress.txt screen no
+fix log_nu   all print 100 "${step_v} ${time_v} ${vfrac} ${H_gap} ${gdot}" file ../DEM/results/shear/volume_fraction.txt screen no
+fix log_wF   all print 100 "${step_v} ${time_v} ${lo_Fx} ${up_Fx}" file ../DEM/results/shear/wall_forces.txt screen no
+
+compute     ke_at   layerGroup ke/atom
+compute     sa_pr   layerGroup stress/atom
+
+fix prof_v layerGroup ave/spatial 1 1 100 x lower ${Lx_val} y lower ${Ly_val} z lower ${dz} vx vy vz density/mass density/number units box file ../DEM/results/shear/profiles/velocity.txt
+
+fix prof_s layerGroup ave/spatial 1 1 100 x lower ${Lx_val} y lower ${Ly_val} z lower ${dz} c_sa_pr[1] c_sa_pr[2] c_sa_pr[3] c_sa_pr[5] units box file ../DEM/results/shear/profiles/stress.txt
+
+# Dumps
+dump d_full all custom 10000 ../DEM/results/shear/dump.full id type mass x y z vx vy vz fx fy fz omegax omegay omegaz shapex shapey shapez quat1 quat2 quat3 quat4 blockiness1 blockiness2 tqx tqy tqz radius
+
+dump d_orient layerGroup custom 10000 ../DEM/results/shear/dump.orient id type x y z quat1 quat2 quat3 quat4 omegax omegay omegaz vx vy vz
+
+print "============================================"
+print "  SHEAR: prolate_3 (c/a = 3.0)"
+print "  Shape: (${a}, ${b}, ${c})"
+print "  Wall vel: ±${wall_vel}"
+print "  Vol frac: ${vfrac}"
+print "  Shear rate: ${gdot}"
+print "  Steps: ${N_STEPS}"
+print "============================================"
+
+fix  move_up upperGroup move linear ${wall_vel} 0 0
+fix  move_lo lowerGroup move linear -${wall_vel} 0 0
+
+restart 10000 ../DEM/restarts/restart_shear.liggghts ../DEM/restarts/restart_shear.liggghts
+
+run  ${N_STEPS}
+
+run 0
+write_restart ../DEM/restarts/restart_shear_final.liggghts
+
+print "=== SHEAR COMPLETE ==="
