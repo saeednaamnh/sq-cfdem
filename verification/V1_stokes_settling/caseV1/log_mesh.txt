@@ -1,0 +1,74 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  6
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 6-fa1285188035
+Exec   : blockMesh
+Date   : Jul 26 2026
+Time   : 04:59:35
+Host   : "saeed-Inspiron-5567"
+PID    : 2692
+I/O    : uncollated
+Case   : /home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD
+nProcs : 1
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Deleting polyMesh directory
+    "/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/constant/polyMesh"
+Creating block mesh from
+    "/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/system/blockMeshDict"
+Creating block edges
+No non-planar block faces defined
+Creating topology blocks
+Creating topology patches
+
+Creating block mesh topology
+
+Check topology
+
+	Basic statistics
+		Number of internal faces : 0
+		Number of boundary faces : 6
+		Number of defined boundary faces : 6
+		Number of undefined boundary faces : 0
+	Checking patch -> block consistency
+
+Creating block offsets
+Creating merge list .
+
+Creating polyMesh from blockMesh
+Creating patches
+Creating cells
+Creating points with scale 1
+    Block 0 cell size :
+        i : 0.017 .. 0.017
+        j : 0.017 .. 0.017
+        k : 0.017 .. 0.017
+
+
+Writing polyMesh
+----------------
+Mesh Information
+----------------
+  boundingBox: (-0.017 -0.017 0) (0.017 0.017 0.102)
+  nPoints: 63
+  nCells: 24
+  nFaces: 100
+  nInternalFaces: 44
+----------------
+Patches
+----------------
+  patch 0 (start: 44 size: 4) name: inlet
+  patch 1 (start: 48 size: 4) name: outlet
+  patch 2 (start: 52 size: 48) name: wall
+
+End
+

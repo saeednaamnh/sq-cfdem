@@ -1,0 +1,47 @@
+# V1 init: ONE spheroid, commanded orientation
+variable ALPHA equal 90       # 0 = axis along flow (z); 90 = perpendicular
+
+echo            both
+log             ../DEM/log.liggghts_init
+atom_style      superquadric
+atom_modify     map array
+communicate     single vel yes
+boundary        f f f
+newton          off
+units           si
+processors      2 2 1
+
+region          reg block -0.017 0.017 -0.017 0.017 0.0 0.102 units box
+create_box      1 reg
+neighbor        0.001 bin
+neigh_modify    delay 0
+
+fix  m1 all property/global youngsModulus peratomtype 5.e6
+fix  m2 all property/global poissonsRatio peratomtype 0.45
+fix  m3 all property/global coefficientRestitution peratomtypepair 1 0.3
+fix  m4 all property/global coefficientFriction peratomtypepair 1 0.5
+
+pair_style  gran model hertz tangential history surface superquadric
+pair_coeff  * *
+timestep    0.00001
+# no gravity, no integrator: frozen particle
+
+# --- template: (A) spheroid c/a=2 | (B) equal-volume sphere ---
+fix pts1 all particletemplate/superquadric 15485863 atom_type 1 density constant 2000 shape constant 0.0006785 0.0006785 0.001357 blockiness constant 2.0 2.0
+#fix pts1 all particletemplate/superquadric 15485863 atom_type 1 density constant 2000 shape constant 0.000855 0.000855 0.000855 blockiness constant 2.0 2.0
+
+fix pdd1 all particledistribution/discrete 32452843 1 pts1 1.0
+region insReg block -0.006 0.006 -0.006 0.006 0.044 0.058 units box
+fix ins all insert/pack seed 32452867 distributiontemplate pdd1 insert_every once overlapcheck yes all_in yes particles_in_region 1 region insReg
+
+thermo_style    custom step atoms
+thermo          10
+run             200                       # enough steps for insertion to fire
+
+group free type 1
+if "${ALPHA} > 0" then "set group free quat 0 1 0 ${ALPHA}"
+
+dump q free custom 1 ../DEM/quat_check.txt id quat1 quat2 quat3 quat4
+run 0
+
+write_restart   ../DEM/post/restart/liggghts.restart

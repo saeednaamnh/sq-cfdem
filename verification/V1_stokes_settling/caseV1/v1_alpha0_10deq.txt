@@ -1,0 +1,5 @@
+shape: a=0.6785 mm  c=1.3570 mm  lam=2.000  alpha=0.0 deg  Re=0.0570
+measured   F = 8.021594e-06 N   (Fx=1.68e-08, Fy=1.68e-08)
+H-S model  F = 8.646677e-06 N   -> measured/H-S    = 0.9277  (-7.23%)   [implementation check, target |dev| <= 2%]
+Oberbeck   F = 1.154828e-05 N   -> measured/exact  = 0.6946  (-30.54%)   [physics check; includes ~3-5% blockage + correlation error]
+  (Perrin factors: K_par=0.9556  K_perp=1.0944  K(alpha)=0.9556;  sphere ref F_sph=1.2085e-05 N)

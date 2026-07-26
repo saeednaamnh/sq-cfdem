@@ -108,7 +108,7 @@ inline scalar CdHolzerSommerfeld(const scalar Re,
     return 8.0/(ReS*std::sqrt(PhiL))
          + 16.0/(ReS*std::sqrt(Phi))
          + 3.0/(std::sqrt(ReS)*std::pow(Phi,0.75))
-         + 0.42*std::pow(10.0, 0.4*std::pow(-std::log10(Phi),0.2))/PhiP;
+         + 0.42*std::pow(10.0, 0.4*std::pow(std::max(0.0,-std::log10(Phi)),0.2))/PhiP;
 }
 
 //- Di Felice voidage-correction exponent

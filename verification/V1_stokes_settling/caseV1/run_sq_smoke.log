@@ -1,0 +1,257 @@
+Decomposing case.
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  6
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 6-fa1285188035
+Exec   : decomposePar -force
+Date   : Jul 23 2026
+Time   : 09:08:05
+Host   : "saeed-Inspiron-5567"
+PID    : 23973
+I/O    : uncollated
+Case   : /home/saeed/sq-cfdem/verification/V1_stokes_settling/case1/CFD
+nProcs : 1
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Removing 4 existing processor directories
+
+
+Decomposing mesh region0
+
+Create mesh
+
+Calculating distribution of cells
+Selecting decompositionMethod simple
+
+Finished decomposition in 0 s
+
+Calculating original mesh data
+
+Distributing cells to processors
+
+Distributing faces to processors
+
+Distributing points to processors
+
+Constructing processor meshes
+
+Processor 0
+    Number of cells = 1152
+    Number of faces shared with processor 1 = 192
+    Number of faces shared with processor 2 = 192
+    Number of processor patches = 2
+    Number of processor faces = 384
+    Number of boundary faces = 288
+
+Processor 1
+    Number of cells = 1152
+    Number of faces shared with processor 0 = 192
+    Number of faces shared with processor 3 = 192
+    Number of processor patches = 2
+    Number of processor faces = 384
+    Number of boundary faces = 288
+
+Processor 2
+    Number of cells = 1152
+    Number of faces shared with processor 0 = 192
+    Number of faces shared with processor 3 = 192
+    Number of processor patches = 2
+    Number of processor faces = 384
+    Number of boundary faces = 288
+
+Processor 3
+    Number of cells = 1152
+    Number of faces shared with processor 1 = 192
+    Number of faces shared with processor 2 = 192
+    Number of processor patches = 2
+    Number of processor faces = 384
+    Number of boundary faces = 288
+
+Number of processor faces = 768
+Max number of cells = 1152 (0% above average 1152)
+Max number of processor patches = 2 (0% above average 2)
+Max number of faces between processors = 384 (0% above average 384)
+
+Time = 0
+
+Processor 0: field transfer
+Processor 1: field transfer
+Processor 2: field transfer
+Processor 3: field transfer
+
+End
+
+do nothing.
+
+//   run_parallel_cfdemSolverPiso_ErgunTestMPI_CFDDEM   //
+
+/home/saeed/sq-cfdem/verification/V1_stokes_settling/case1/CFD
+
+rm: cannot remove 'couplingFiles/*': No such file or directory
+no separate DEM run.
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  6
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 6-fa1285188035
+Exec   : cfdemSolverPisoSQ -parallel
+Date   : Jul 23 2026
+Time   : 09:08:06
+Host   : "saeed-Inspiron-5567"
+PID    : 24005
+I/O    : uncollated
+Case   : /home/saeed/sq-cfdem/verification/V1_stokes_settling/case1/CFD
+nProcs : 4
+Slaves : 
+3
+(
+"saeed-Inspiron-5567.24006"
+"saeed-Inspiron-5567.24007"
+"saeed-Inspiron-5567.24008"
+)
+
+Pstream initialized with:
+    floatTransfer      : 0
+    nProcsSimpleSum    : 0
+    commsType          : nonBlocking
+    polling iterations : 0
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+Reading field p
+
+Reading physical velocity field U
+Note: only if voidfraction at boundary is 1, U is superficial velocity!!!
+
+
+Reading momentum exchange field Ksl
+
+
+Reading voidfraction field voidfraction = (Vgas/Vparticle)
+
+Reading particle velocity field Us
+
+
+Creating density field rho
+
+Reading/calculating face flux field phi
+
+Generating interstitial face flux field phiByVoidfraction
+
+Selecting incompressible transport model Newtonian
+Selecting turbulence model type laminar
+Selecting laminar stress model Stokes
+No finite volume options present
+
+Reading g
+Selecting locateModel engineSuperquadric
+[1] 
+3
+(
+engineIB
+
+standard
+engine
+[1] )
+
+[1] --> FOAM FATAL ERROR: 
+[1] [3] locateModel::New(const dictionary&, const spray&) : 
+    unknown locateModelType type engineSuperquadric, constructor not in hash table
+
+    Valid locateModel types are :
+
+[3] 
+[3] --> FOAM FATAL ERROR: 
+[3] locateModel::New(const dictionary&, const spray&) : 
+    unknown locateModelType type engineSuperquadric, constructor not in hash table
+
+    Valid locateModel types are :
+[3] 
+[3] 
+FOAM parallel run aborting
+[3] 
+[1] [0] 
+
+[1] 
+FOAM parallel run aborting
+[1] 
+[0] [2] 
+[2] 
+[2] --> FOAM FATAL ERROR: 
+[2] locateModel::New(const dictionary&, const spray&) : 
+    unknown locateModelType type engineSuperquadric, constructor not in hash table
+
+    Valid locateModel types are :
+[2] 
+[2] 
+FOAM parallel run aborting
+[2] 
+
+[0] --> FOAM FATAL ERROR: 
+[0] locateModel::New(const dictionary&, const spray&) : 
+    unknown locateModelType type engineSuperquadric, constructor not in hash table
+
+    Valid locateModel types are :
+[0] 
+[0] 
+FOAM parallel run aborting
+[3] #0  [0] 
+[1] #0Foam::error::printStack(Foam::Ostream&)  Foam::error::printStack(Foam::Ostream&)[0] #0  [2] #0  Foam::error::printStack(Foam::Ostream&)Foam::error::printStack(Foam::Ostream&) at ??:?
+[3] #1  Foam::error::abort() at ??:?
+[0] #1  Foam::error::abort() at ??:?
+[2] #1  Foam::error::abort() at ??:?
+[1] #1  Foam::error::abort() at ??:?
+[0] #2  Foam::locateModel::New(Foam::dictionary const&, Foam::cfdemCloud&) at ??:?
+[3] #2  Foam::locateModel::New(Foam::dictionary const&, Foam::cfdemCloud&) at ??:?
+[2] #2  Foam::locateModel::New(Foam::dictionary const&, Foam::cfdemCloud&) at ??:?
+[1] #2  Foam::locateModel::New(Foam::dictionary const&, Foam::cfdemCloud&) at ??:?
+[3] #3  Foam::cfdemCloud::cfdemCloud(Foam::fvMesh const&) at ??:?
+[1] #3  Foam::cfdemCloud::cfdemCloud(Foam::fvMesh const&) at ??:?
+[2] #3  Foam::cfdemCloud::cfdemCloud(Foam::fvMesh const&) at ??:?
+[0] #3  Foam::cfdemCloud::cfdemCloud(Foam::fvMesh const&) at ??:?
+[3] #4  Foam::cfdemCloudRotationSuperquadric::cfdemCloudRotationSuperquadric(Foam::fvMesh const&) at ??:?
+[1] #4  Foam::cfdemCloudRotationSuperquadric::cfdemCloudRotationSuperquadric(Foam::fvMesh const&) at ??:?
+[0] #4  Foam::cfdemCloudRotationSuperquadric::cfdemCloudRotationSuperquadric(Foam::fvMesh const&) at ??:?
+[2] #4  Foam::cfdemCloudRotationSuperquadric::cfdemCloudRotationSuperquadric(Foam::fvMesh const&) at ??:?
+[3] #5   at ??:?
+[1] #5   at ??:?
+[2] #5   at ??:?
+[0] #5  ???? in "/home/saeed/OpenFOAM/saeed-6/platforms/linux64GccDPInt32Opt/bin/cfdemSolverPisoSQ"
+[1] #6  __libc_start_main in "/home/saeed/OpenFOAM/saeed-6/platforms/linux64GccDPInt32Opt/bin/cfdemSolverPisoSQ"
+[3] #6  __libc_start_main in "/home/saeed/OpenFOAM/saeed-6/platforms/linux64GccDPInt32Opt/bin/cfdemSolverPisoSQ"
+[0] #6  __libc_start_main in "/lib/x86_64-linux-gnu/libc.so.6"
+[3] #7   in "/lib/x86_64-linux-gnu/libc.so.6"
+[1] #7   in "/home/saeed/OpenFOAM/saeed-6/platforms/linux64GccDPInt32Opt/bin/cfdemSolverPisoSQ"
+[2] #6  __libc_start_main in "/lib/x86_64-linux-gnu/libc.so.6"
+[0] #7  ?? in "/lib/x86_64-linux-gnu/libc.so.6"
+[2] #7   in "/home/saeed/OpenFOAM/saeed-6/platforms/linux64GccDPInt32Opt/bin/cfdemSolverPisoSQ"
+--------------------------------------------------------------------------
+MPI_ABORT was invoked on rank 3 in communicator MPI COMMUNICATOR 3 SPLIT FROM 0
+with errorcode 1.
+
+NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
+You may or may not see output from other processes, depending on
+exactly when Open MPI kills them.
+--------------------------------------------------------------------------
+? in "/home/saeed/OpenFOAM/saeed-6/platforms/linux64GccDPInt32Opt/bin/cfdemSolverPisoSQ"
+[saeed-Inspiron-5567:23999] 1 more process has sent help message help-mpi-api.txt / mpi-abort
+[saeed-Inspiron-5567:23999] Set MCA parameter "orte_base_help_aggregate" to 0 to see all help / error messages
+deleting data at: /home/saeed/sq-cfdem/verification/V1_stokes_settling/case1 ? otherwise press Ctrl-C:\n

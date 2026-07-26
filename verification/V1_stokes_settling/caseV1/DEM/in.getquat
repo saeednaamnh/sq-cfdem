@@ -1,0 +1,19 @@
+echo            both
+atom_style      superquadric
+atom_modify     map array
+communicate     single vel yes
+boundary        f f f
+newton          off
+units           si
+processors      2 2 1
+read_restart    ../DEM/post/restart/liggghts.restart
+neighbor        0.001 bin
+pair_style  gran model hertz tangential history surface superquadric
+pair_coeff  * *
+fix  m1 all property/global youngsModulus peratomtype 5.e6
+fix  m2 all property/global poissonsRatio peratomtype 0.45
+fix  m3 all property/global coefficientRestitution peratomtypepair 1 0.3
+fix  m4 all property/global coefficientFriction peratomtypepair 1 0.5
+timestep 0.00001
+dump q all custom 1 quat.txt id quat1 quat2 quat3 quat4
+run 0

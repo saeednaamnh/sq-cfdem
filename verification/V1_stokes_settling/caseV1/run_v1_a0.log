@@ -1,0 +1,147 @@
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/log_run_parallel_cfdemSolverPiso_ErgunTestMPI_CFDDEM': No such file or directory
+Decomposing case.
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  6
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 6-fa1285188035
+Exec   : decomposePar -force
+Date   : Jul 26 2026
+Time   : 04:34:48
+Host   : "saeed-Inspiron-5567"
+PID    : 1862
+I/O    : uncollated
+Case   : /home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD
+nProcs : 1
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Removing 0 existing processor directories
+
+
+Decomposing mesh region0
+
+Create mesh
+
+
+--> FOAM FATAL ERROR: 
+Cannot find file "points" in directory "polyMesh" in times "0" down to constant
+
+    From function virtual Foam::IOobject Foam::fileOperation::findInstance(const Foam::IOobject&, Foam::scalar, const Foam::word&) const
+    in file global/fileOperations/fileOperation/fileOperation.C at line 871.
+
+FOAM exiting
+
+do nothing.
+/home/saeed/CFDEM/CFDEMcoupling-PUBLIC/src/lagrangian/cfdemParticle/etc/functions.sh: line 868: cd: /home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/processor0: No such file or directory
+/home/saeed/CFDEM/CFDEMcoupling-PUBLIC/src/lagrangian/cfdemParticle/etc/functions.sh: line 868: cd: /home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/processor1: No such file or directory
+/home/saeed/CFDEM/CFDEMcoupling-PUBLIC/src/lagrangian/cfdemParticle/etc/functions.sh: line 868: cd: /home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/processor2: No such file or directory
+/home/saeed/CFDEM/CFDEMcoupling-PUBLIC/src/lagrangian/cfdemParticle/etc/functions.sh: line 868: cd: /home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/processor3: No such file or directory
+
+//   run_parallel_cfdemSolverPiso_ErgunTestMPI_CFDDEM   //
+
+/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD
+
+rm: cannot remove 'couplingFiles/*': No such file or directory
+no separate DEM run.
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  6
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 6-fa1285188035
+Exec   : cfdemSolverPisoSQ -parallel
+Date   : Jul 26 2026
+Time   : 04:34:49
+Host   : "saeed-Inspiron-5567"
+PID    : 1891
+I/O    : uncollated
+Case   : /home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD
+nProcs : 4
+Slaves : 
+3
+(
+"saeed-Inspiron-5567.1892"
+"saeed-Inspiron-5567.1893"
+"saeed-Inspiron-5567.1894"
+)
+
+Pstream initialized with:
+    floatTransfer      : 0
+    nProcsSimpleSum    : 0
+    commsType          : nonBlocking
+    polling iterations : 0
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+[0] 
+[0] 
+[0] --> FOAM FATAL ERROR: 
+[0] cfdemSolverPisoSQ: cannot open case directory "/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/processor0"
+[0] 
+[0] 
+FOAM parallel run exiting
+[0] 
+--------------------------------------------------------------------------
+MPI_ABORT was invoked on rank 0 in communicator MPI COMMUNICATOR 3 SPLIT FROM 0
+with errorcode 1.
+
+NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
+You may or may not see output from other processes, depending on
+exactly when Open MPI kills them.
+--------------------------------------------------------------------------
+deleting data at: /home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1 ? otherwise press Ctrl-C:\n
+deleting CFD mesh files
+Cleaning /home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD case
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/clockData': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/particleProbes': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/averageProps/': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/octave/octave-core': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/octave/octave-workspace': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/remotePlace': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/oldProcDirs': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/tmp.balance': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/callgrind.out.*': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/hpctoolkit-*': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/warnings.liggghts': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/DEM/post/restart': Is a directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/DEM/post/restart/*': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/DEM/tmp.lammps.variable': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/DEM/log*': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/DEM/.portOffset.txt': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/*.dat': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/*.pascal': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/*.profile': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/pascal/0.*': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/pascal/1': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/pascal/1.*': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/pascal/2': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/pascal/2.*': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/pascal/3': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/pascal/3.*': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/pascal/4': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/pascal/4.*': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/pascal/5': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/pascal/5.*': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/pascal/6': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/pascal/6.*': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/pascal/7': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/pascal/7.*': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/pascal/8': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/pascal/8.*': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/pascal/9': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/pascal/9.*': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/pascal/10': No such file or directory
+rm: cannot remove '/home/saeed/sq-cfdem/verification/V1_stokes_settling/caseV1/CFD/pascal/10.*': No such file or directory
+done
