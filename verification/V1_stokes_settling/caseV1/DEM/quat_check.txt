@@ -7,4 +7,4 @@ ITEM: BOX BOUNDS ff ff ff
 -0.017 0.017
 0 0.102
 ITEM: ATOMS id quat1 quat2 quat3 quat4 
-1 0.707107 0 0.707107 0 
+1 1 0 0 0 

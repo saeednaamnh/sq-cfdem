@@ -17,7 +17,7 @@ FoamFile
 
 dimensions      [0 3 -1 0 0 0 0];
 
-internalField   nonuniform List<scalar> 5(1.44748e-05 1.45597e-05 1.4712e-05 1.46789e-05 1.45239e-05);
+internalField   nonuniform List<scalar> 5(1.44725e-05 1.45496e-05 1.46616e-05 1.46225e-05 1.45055e-05);
 
 boundaryField
 {
@@ -29,7 +29,7 @@ boundaryField
     outlet
     {
         type            calculated;
-        value           uniform 1.44913e-05;
+        value           uniform 1.44811e-05;
     }
     wall
     {
@@ -39,12 +39,12 @@ boundaryField
     procBoundary2to0
     {
         type            processor;
-        value           nonuniform List<scalar> 6(2.95596e-08 5.85504e-08 7.73059e-08 -1.07869e-08 -7.25037e-08 -2.39074e-08);
+        value           nonuniform List<scalar> 6(2.54765e-08 5.06122e-08 5.69343e-08 -1.46758e-08 -5.57706e-08 -1.82442e-08);
     }
     procBoundary2to3
     {
         type            processor;
-        value           nonuniform List<scalar> 6(-5.43992e-08 -1.43381e-07 -2.29591e-07 4.38844e-08 2.2746e-07 5.64732e-08);
+        value           nonuniform List<scalar> 6(-4.79641e-08 -1.27756e-07 -1.68902e-07 5.37631e-08 1.72792e-07 4.2649e-08);
     }
 }
 

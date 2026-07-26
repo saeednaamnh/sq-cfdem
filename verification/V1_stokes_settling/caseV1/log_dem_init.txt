@@ -36,29 +36,29 @@ timestep    0.00001
 # no gravity, no integrator: frozen particle
 
 # --- template: (A) spheroid c/a=2 | (B) equal-volume sphere ---
-fix pts1 all particletemplate/superquadric 15485863 atom_type 1 density constant 2000 shape constant 0.0006785 0.0006785 0.001357 blockiness constant 2.0 2.0
-#fix pts1 all particletemplate/superquadric 15485863 atom_type 1 density constant 2000 shape constant 0.000855 0.000855 0.000855 blockiness constant 2.0 2.0
+#fix pts1 all particletemplate/superquadric 15485863 atom_type 1 density constant 2000 shape constant 0.0006785 0.0006785 0.001357 blockiness constant 2.0 2.0
+fix pts1 all particletemplate/superquadric 15485863 atom_type 1 density constant 2000 shape constant 0.000855 0.000855 0.000855 blockiness constant 2.0 2.0
 
 fix pdd1 all particledistribution/discrete 32452843 1 pts1 1.0
 Fix particledistribution/discrete (id pdd1): distribution based on mass%:
-    pts1: d=2.714271e-03 (max. bounding sphere) mass%=100.000000%
+    pts1: d=1.710171e-03 (max. bounding sphere) mass%=100.000000%
 Fix particledistribution/discrete (id pdd1): distribution based on number%:
-    pts1: d=2.714271e-03 (max. bounding sphere) number%=100.000000%
+    pts1: d=1.710171e-03 (max. bounding sphere) number%=100.000000%
 region insReg block -0.006 0.006 -0.006 0.006 0.044 0.058 units box
 fix ins all insert/pack seed 32452867 distributiontemplate pdd1 insert_every once overlapcheck yes all_in yes particles_in_region 1 region insReg
 
 thermo_style    custom step atoms
 thermo          10
 run             200                       # enough steps for insertion to fire
-Setting up run at Sun Jul 26 04:59:35 2026
+Setting up run at Sun Jul 26 05:05:27 2026
 
 INFO: Resetting random generator for region insReg
 INFO: Particle insertion ins: inserting every 0 steps
-Memory usage per processor = 9.62737 Mbytes
+Memory usage per processor = 9.68742 Mbytes
     Step    Atoms 
        0        0 
-INFO: Particle insertion ins: inserted 1 particle templates (mass 5.233571e-06) at step 1
- - a total of 1 particle templates (mass 5.233571e-06) inserted so far.
+INFO: Particle insertion ins: inserted 1 particle templates (mass 5.236209e-06) at step 1
+ - a total of 1 particle templates (mass 5.236209e-06) inserted so far.
       10        1 
       20        1 
       30        1 
@@ -79,14 +79,14 @@ INFO: Particle insertion ins: inserted 1 particle templates (mass 5.233571e-06) 
      180        1 
      190        1 
      200        1 
-Loop time of 0.00353532 on 4 procs for 200 steps with 1 atoms, finish time Sun Jul 26 04:59:35 2026
+Loop time of 0.00595465 on 4 procs for 200 steps with 1 atoms, finish time Sun Jul 26 05:05:27 2026
 
 
-Pair  time (%) = 0.000133737 (3.78287)
-Neigh time (%) = 3.5956e-05 (1.01705)
-Comm  time (%) = 0.000316224 (8.94471)
-Outpt time (%) = 0.000216346 (6.11955)
-Other time (%) = 0.00283306 (80.1358)
+Pair  time (%) = 0.000141416 (2.37489)
+Neigh time (%) = 9.43895e-05 (1.58514)
+Comm  time (%) = 0.000191381 (3.21398)
+Outpt time (%) = 0.000991956 (16.6585)
+Other time (%) = 0.00453551 (76.1675)
 
 Nlocal:    0.25 ave 1 max 0 min
 Histogram: 3 0 0 0 0 0 0 0 0 1
@@ -103,26 +103,22 @@ Dangerous builds = 0
 group free type 1
 1 atoms in group free
 if "${ALPHA} > 0" then "set group free quat 0 1 0 ${ALPHA}"
-set group free quat 0 1 0 ${ALPHA}
-set group free quat 0 1 0 90
-Setting atom values ...
-  1 settings made for quat
 
 dump q free custom 1 ../DEM/quat_check.txt id quat1 quat2 quat3 quat4
 run 0
-Setting up run at Sun Jul 26 04:59:35 2026
+Setting up run at Sun Jul 26 05:05:27 2026
 
-Memory usage per processor = 9.63126 Mbytes
+Memory usage per processor = 9.69129 Mbytes
     Step    Atoms 
      200        1 
-Loop time of 2.922e-06 on 4 procs for 0 steps with 1 atoms, finish time Sun Jul 26 04:59:35 2026
+Loop time of 4.40201e-06 on 4 procs for 0 steps with 1 atoms, finish time Sun Jul 26 05:05:27 2026
 
 
 Pair  time (%) = 0 (0)
 Neigh time (%) = 0 (0)
 Comm  time (%) = 0 (0)
 Outpt time (%) = 0 (0)
-Other time (%) = 2.922e-06 (100)
+Other time (%) = 4.40201e-06 (100)
 
 Nlocal:    0.25 ave 1 max 0 min
 Histogram: 3 0 0 0 0 0 0 0 0 1

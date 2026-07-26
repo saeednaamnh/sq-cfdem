@@ -1,5 +1,5 @@
 # V1 init: ONE spheroid, commanded orientation
-variable ALPHA equal 90       # 0 = axis along flow (z); 90 = perpendicular
+variable ALPHA equal 0        # 0 = axis along flow (z); 90 = perpendicular
 
 echo            both
 log             ../DEM/log.liggghts_init
@@ -27,8 +27,8 @@ timestep    0.00001
 # no gravity, no integrator: frozen particle
 
 # --- template: (A) spheroid c/a=2 | (B) equal-volume sphere ---
-fix pts1 all particletemplate/superquadric 15485863 atom_type 1 density constant 2000 shape constant 0.0006785 0.0006785 0.001357 blockiness constant 2.0 2.0
-#fix pts1 all particletemplate/superquadric 15485863 atom_type 1 density constant 2000 shape constant 0.000855 0.000855 0.000855 blockiness constant 2.0 2.0
+#fix pts1 all particletemplate/superquadric 15485863 atom_type 1 density constant 2000 shape constant 0.0006785 0.0006785 0.001357 blockiness constant 2.0 2.0
+fix pts1 all particletemplate/superquadric 15485863 atom_type 1 density constant 2000 shape constant 0.000855 0.000855 0.000855 blockiness constant 2.0 2.0
 
 fix pdd1 all particledistribution/discrete 32452843 1 pts1 1.0
 region insReg block -0.006 0.006 -0.006 0.006 0.044 0.058 units box

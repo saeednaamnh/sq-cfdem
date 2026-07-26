@@ -17,7 +17,7 @@ FoamFile
 
 dimensions      [0 2 -2 0 0 0 0];
 
-internalField   nonuniform List<scalar> 6(1.00117 1.00113 1.00097 1.00053 1.00015 1.00004);
+internalField   nonuniform List<scalar> 6(1.00094 1.00091 1.00075 1.0004 1.00012 1.00003);
 
 boundaryField
 {
@@ -37,12 +37,12 @@ boundaryField
     procBoundary0to1
     {
         type            processor;
-        value           nonuniform List<scalar> 6(1.00124 1.00125 1.00112 1.0005 1 1.00001);
+        value           nonuniform List<scalar> 6(1.001 1.00101 1.00087 1.00036 1 1.00001);
     }
     procBoundary0to2
     {
         type            processor;
-        value           nonuniform List<scalar> 6(1.00124 1.00125 1.00112 1.0005 1 1.00001);
+        value           nonuniform List<scalar> 6(1.001 1.00101 1.00087 1.00036 1 1.00001);
     }
 }
 

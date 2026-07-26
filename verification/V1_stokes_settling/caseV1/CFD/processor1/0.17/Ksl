@@ -41,7 +41,7 @@ boundaryField
     procBoundary1to3
     {
         type            processor;
-        value           nonuniform List<scalar> 6(0 0 13.6872 49.2564 0 0);
+        value           nonuniform List<scalar> 6(0 0 14.9257 34.8158 0 0);
     }
 }
 
