@@ -1,7 +1,7 @@
 # sq-cfdem — Superquadric (prolate spheroid) extension for CFDEMcoupling-PUBLIC
 
 Companion code project to:
-Naamneh (2026), "Orientation-dependent transport coefficients of sheared
+Naamnh (2026), "Orientation-dependent transport coefficients of sheared
 prolate granular gases from DEM", and the planned CFD-DEM follow-up.
 
 ## What this is
