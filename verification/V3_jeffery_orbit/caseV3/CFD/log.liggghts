@@ -1,4 +1,0 @@
-LIGGGHTS (Version LIGGGHTS-PUBLIC 3.8.0, compiled 2026-07-23-07:35:10 by saeed, git commit 3d5c00f20519e6bb6eb6756f51f1ad36564e649d)
-# V3 run: free rotation under hydrodynamic torque (Jeffery test)
-echo            both
-log             ../DEM/log.liggghts
