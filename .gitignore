@@ -15,3 +15,14 @@ Make/linux*
 platforms/
 log_solve.txt
 **/results/
+# simulation output & build artifacts (never track)
+**/processor*/
+**/polyMesh/
+**/CFD/[0-9]*/
+**/log.liggghts*
+**/results/
+**/restarts/
+**/*.liggghts
+**/dump.*
+tools/
+physics_grid/

@@ -4,8 +4,8 @@ startFrom       startTime;
 startTime       0;
 stopAt          endTime;
 // smoke: 100000 DEM steps * 4.066227e-05 = 4.07; production (5M): 203.4
-endTime         4.07;
-deltaT          4.066227e-03;
+endTime         100.0;
+deltaT          2.0e-03;
 writeControl    adjustableRunTime;
 writeInterval   1.0;
 purgeWrite      3;
