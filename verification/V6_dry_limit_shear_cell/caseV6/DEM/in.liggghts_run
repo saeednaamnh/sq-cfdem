@@ -3,7 +3,7 @@
 # Semi-axes: a=0.2371, b=0.2371, c=0.7114
 # ============================================================================
 
-variable    N_STEPS     equal   100000   # smoke; production: 5000000
+variable    N_STEPS     equal   5000000
 variable    a           equal   0.2371
 variable    b           equal   0.2371
 variable    c           equal   0.7114

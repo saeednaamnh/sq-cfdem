@@ -70,8 +70,8 @@ f"""FoamFile {{ version 2.0; format ascii; class dictionary; object controlDict;
 application     cfdemSolverPisoSQ;
 startFrom startTime; startTime 0; stopAt endTime;
 endTime         {end:.4f};
-deltaT          {dtC:.6e};
-writeControl adjustableRunTime; writeInterval {100*dtC:.6f}; purgeWrite 0;
+deltaT          {dtC:.16e};
+writeControl adjustableRunTime; writeInterval {100*dtC:.16f}; purgeWrite 0;
 writeFormat ascii; writePrecision 7; timeFormat general; timePrecision 6;
 runTimeModifiable yes;
 """)
