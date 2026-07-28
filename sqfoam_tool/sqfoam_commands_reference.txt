@@ -1,0 +1,127 @@
+==============================================================================
+  sqfoam — COMMAND REFERENCE  (sq-cfdem superquadric CFD-DEM workflow)
+==============================================================================
+  Solver: cfdemSolverPisoSQ   |   Repo: github.com/saeednaamnh/sq-cfdem
+  Shapes: sphere | prolate_2 | prolate_3 | prolate_5
+  Stokes number St: 1000 = dry-like  ...  1 = viscous-dominated
+==============================================================================
+
+TWO RULES THAT MATTER
+---------------------
+1. ONE coupled `run` at a time on the laptop (4 cores). `new`, `status`,
+   `extract`, `viz` are all safe to use WHILE a run is going. Two `run`s
+   starve each other.
+2. After a reboot: re-source your shells first (OpenFOAM + CFDEM bashrc),
+   then `sqfoam doctor` to confirm the environment is intact.
+
+
+------------------------------------------------------------------------------
+0) CHECK ENVIRONMENT
+------------------------------------------------------------------------------
+  sqfoam doctor
+      Verifies OpenFOAM, CFDEM, LIGGGHTS, cfdemSolverPisoSQ, libsqCfdem.so,
+      restarts, extraction pipeline, postprocess script. Creates ~/.sqfoam.conf
+      (edit paths there if any check is red).
+
+
+------------------------------------------------------------------------------
+1) GENERATE A CASE   (instant — writes files only — safe anytime)
+------------------------------------------------------------------------------
+  sqfoam new --shape prolate_3 --St 100
+      Creates ./prolate_3_St100/ with CFD/ + DEM/ + run.sh, a coupling-
+      transformed copy of in_shear.lmp, matched OpenFOAM setup, and a
+      symlinked placement restart (particle-for-particle with Table I).
+
+  Options:
+      --shape   sphere | prolate_2 | prolate_3 | prolate_5   (required)
+      --St      Stokes number, any value                     (required)
+      --name    custom directory name   (default: shape_StN)
+      --steps   DEM shear steps          (default: 5000000)
+      --out     parent directory         (default: current dir)
+
+
+------------------------------------------------------------------------------
+2) RUN A CASE   (background, resumable — ONLY when cores are free)
+------------------------------------------------------------------------------
+  sqfoam run prolate_3_St100
+      Launches the coupled run in the background. Survives terminal close.
+      If interrupted (sleep/reboot/crash), just run the SAME command again —
+      it resumes from the last shear checkpoint automatically.
+
+  Foreground (watch it live, blocks the terminal):
+      sqfoam run prolate_3_St100 --fg
+
+
+------------------------------------------------------------------------------
+3) CHECK A RUN
+------------------------------------------------------------------------------
+  sqfoam status prolate_3_St100
+      Shows: RUNNING or not, current step, granular temperature, and how
+      many orientation frames written (~100+ needed for a converged fit).
+      Check once a day for long runs.
+
+
+------------------------------------------------------------------------------
+4) POST-PROCESS  (extract transport coefficients vs. Table I)
+------------------------------------------------------------------------------
+  sqfoam extract prolate_3_St100
+      Runs the extraction pipeline -> phi, psi, kappa_w, i1, A_xx, A_xz, T,
+      compared against the published Table I values.
+      Meaningful once the run has ~100+ orient frames; before that it reads
+      low and is flagged "preliminary".
+
+  Optional:
+      --truth /path/to/coefficients_v6.json   (custom ground-truth file)
+
+
+------------------------------------------------------------------------------
+5) VISUALIZE  (ParaView ellipsoid glyphs — reads only — safe anytime)
+------------------------------------------------------------------------------
+  sqfoam viz prolate_3_St100 --which shear --res 8
+      Generates real ellipsoid VTK meshes + collection.pvd from the dumps.
+      Works on a still-running case (visualizes frames written so far).
+      Prints the .pvd path when done.
+
+  Options:
+      --which   shear | placement       (default: shear)
+      --res     ellipsoid mesh resolution, higher = smoother/slower (default 8)
+
+  Then in ParaView:
+      File -> Open -> .../vtk_shear/collection.pvd -> Apply
+      Color by:  orientation_angle   (or speed / particle_type / particle_id)
+
+
+------------------------------------------------------------------------------
+6) GENERATE THE FULL GRID  (all 24 St x aspect-ratio cases at once)
+------------------------------------------------------------------------------
+  sqfoam grid --full
+      Writes all 24 cases (4 shapes x 6 Stokes numbers) into ./physics_grid/.
+      Then `sqfoam run` each as compute allows, or feed manifest.json to a
+      cluster scheduler as a job array.
+
+
+==============================================================================
+  TYPICAL SESSION
+==============================================================================
+  # generate + launch a new physics-sweep point
+  sqfoam new  --shape prolate_5 --St 10
+  sqfoam run  prolate_5_St10
+
+  # ... hours/days later ...
+  sqfoam status  prolate_5_St10          # frames climbing?
+  sqfoam extract prolate_5_St10          # phi(St) point for the paper
+  sqfoam viz     prolate_5_St10          # ellipsoids for a figure
+
+
+==============================================================================
+  V6 (dry-limit anchor) — CURRENTLY RUNNING
+==============================================================================
+  Daily check:
+    sqfoam status  ~/sq-cfdem/verification/V6_dry_limit_shear_cell/caseV6
+
+  When frames > ~100, watch i1 -> 0.68 and phi -> 1.2:
+    sqfoam extract ~/sq-cfdem/verification/V6_dry_limit_shear_cell/caseV6
+
+  If it stops (sleep/reboot), resume with:
+    sqfoam run     ~/sq-cfdem/verification/V6_dry_limit_shear_cell/caseV6
+==============================================================================
