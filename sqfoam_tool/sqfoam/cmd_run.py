@@ -23,7 +23,7 @@ def cmd_status(a):
     case=Path(a.case).resolve()
     # alive?
     out=subprocess.run(["pgrep","-af","cfdemSolverPisoSQ"],
-        capture_output=True,text=True).stdout
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True).stdout
     alive=str(case) in out or "cfdemSolverPisoSQ" in out
     gt=case/"DEM"/"results"/"shear"/"granular_temp.txt"
     step="(no data yet)"; T="?"

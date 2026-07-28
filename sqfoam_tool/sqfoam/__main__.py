@@ -25,6 +25,7 @@ from cmd_new     import cmd_new
 from cmd_run     import cmd_run, cmd_status
 from cmd_extract import cmd_extract
 from cmd_viz     import cmd_viz
+from cmd_vizcfd  import cmd_vizcfd
 from cmd_grid    import cmd_grid
 
 def main():
@@ -55,10 +56,15 @@ def main():
     e.add_argument("case")
     e.add_argument("--truth", default=None, help="Table I json for comparison")
 
-    v = sub.add_parser("viz", help="generate ParaView ellipsoid VTK/PVD")
+    v = sub.add_parser("viz", help="generate ParaView ellipsoid VTK/PVD (particles)")
     v.add_argument("case")
     v.add_argument("--which", default="shear", choices=["shear","placement"])
     v.add_argument("--res", type=int, default=8, help="ellipsoid mesh resolution")
+
+    vc = sub.add_parser("viz-cfd", help="prepare CFD continuum fields for ParaView")
+    vc.add_argument("case")
+    vc.add_argument("--decomposed", action="store_true",
+                    help="open processor dirs directly (skip reconstructPar)")
 
     g = sub.add_parser("grid", help="generate the full parameter grid")
     g.add_argument("--full", action="store_true")
@@ -66,7 +72,8 @@ def main():
 
     a = p.parse_args()
     {"doctor":cmd_doctor, "new":cmd_new, "run":cmd_run, "status":cmd_status,
-     "extract":cmd_extract, "viz":cmd_viz, "grid":cmd_grid}[a.cmd](a)
+     "extract":cmd_extract, "viz":cmd_viz, "viz-cfd":cmd_vizcfd,
+     "grid":cmd_grid}[a.cmd](a)
 
 if __name__ == "__main__":
     main()

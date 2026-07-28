@@ -1,18 +1,47 @@
 ==============================================================================
-  sqfoam — COMMAND REFERENCE  (sq-cfdem superquadric CFD-DEM workflow)
+  sqfoam - COMMAND REFERENCE  (sq-cfdem superquadric CFD-DEM workflow)
 ==============================================================================
-  Solver: cfdemSolverPisoSQ   |   Repo: github.com/saeednaamnh/sq-cfdem
-  Shapes: sphere | prolate_2 | prolate_3 | prolate_5
-  Stokes number St: 1000 = dry-like  ...  1 = viscous-dominated
+  Machine : saeed@saeed-Inspiron-5567  (Ubuntu 18.04, Python 3.6, 4 cores)
+  Solver  : cfdemSolverPisoSQ
+  Repo    : github.com/saeednaamnh/sq-cfdem
+  Shapes  : sphere | prolate_2 | prolate_3 | prolate_5
+  Stokes  : St 1000 = dry-like ... St 1 = viscous-dominated
 ==============================================================================
 
-TWO RULES THAT MATTER
----------------------
-1. ONE coupled `run` at a time on the laptop (4 cores). `new`, `status`,
-   `extract`, `viz` are all safe to use WHILE a run is going. Two `run`s
-   starve each other.
-2. After a reboot: re-source your shells first (OpenFOAM + CFDEM bashrc),
-   then `sqfoam doctor` to confirm the environment is intact.
+  KEY PATHS ON THIS DEVICE
+  ------------------------
+  sqfoam command .......... /home/saeed/.local/bin/sqfoam
+  sqfoam code ............. /home/saeed/.local/sqfoam/sqfoam/
+  sqfoam config ........... /home/saeed/.sqfoam.conf
+  sqfoam source (repo) .... /home/saeed/sq-cfdem/sqfoam_tool/
+
+  Project repo ............ /home/saeed/sq-cfdem/
+  V6 dry-limit case ....... /home/saeed/sq-cfdem/verification/V6_dry_limit_shear_cell/caseV6/
+  Physics grid (24 cases) . /home/saeed/sq-cfdem/physics_grid/
+  Wet-grid generator ...... /home/saeed/sq-cfdem/tools/generate_wet_grid.py
+
+  Original dry study ...... /home/saeed/Desktop/aspect_ratio_sweep/
+  Extraction pipeline ..... /home/saeed/Desktop/aspect_ratio_sweep/extract_coefficients_v5.py
+  Comparison script ....... /home/saeed/Desktop/aspect_ratio_sweep/v6_compare.py
+  Table I ground truth .... /home/saeed/Desktop/aspect_ratio_sweep/figures/coefficients_v6.json
+  ParaView postprocess .... /home/saeed/Desktop/aspect_ratio_sweep/postprocess/postprocess_shear.py
+  Placement restarts ...... /home/saeed/Desktop/aspect_ratio_sweep/cases/<shape>/restarts/
+
+  Stack:
+  OpenFOAM-6 .............. /opt/openfoam6/
+  LIGGGHTS source ......... /home/saeed/LIGGGHTS/LIGGGHTS-PUBLIC/src/  (lmp_auto here)
+  CFDEMcoupling ........... /home/saeed/CFDEM/CFDEMcoupling-PUBLIC/
+  libsqCfdem.so ........... $FOAM_USER_LIBBIN/libsqCfdem.so
+
+==============================================================================
+
+  TWO RULES THAT MATTER
+  ---------------------
+  1. ONE coupled `run` at a time (4 cores). new / status / extract / viz are
+     safe to use WHILE a run is going. Two runs starve each other.
+  2. After a reboot: re-source OpenFOAM + CFDEM in your shell first, then
+     `sqfoam doctor`. Sleep is masked, but a reboot still stops a run
+     (resume it with `sqfoam run <case>` - it continues from last checkpoint).
 
 
 ------------------------------------------------------------------------------
@@ -20,108 +49,160 @@ TWO RULES THAT MATTER
 ------------------------------------------------------------------------------
   sqfoam doctor
       Verifies OpenFOAM, CFDEM, LIGGGHTS, cfdemSolverPisoSQ, libsqCfdem.so,
-      restarts, extraction pipeline, postprocess script. Creates ~/.sqfoam.conf
-      (edit paths there if any check is red).
+      restarts, extraction pipeline, postprocess script.
 
 
 ------------------------------------------------------------------------------
-1) GENERATE A CASE   (instant — writes files only — safe anytime)
+1) GENERATE A CASE   (instant, writes files only, safe anytime)
 ------------------------------------------------------------------------------
   sqfoam new --shape prolate_3 --St 100
-      Creates ./prolate_3_St100/ with CFD/ + DEM/ + run.sh, a coupling-
-      transformed copy of in_shear.lmp, matched OpenFOAM setup, and a
-      symlinked placement restart (particle-for-particle with Table I).
 
   Options:
-      --shape   sphere | prolate_2 | prolate_3 | prolate_5   (required)
-      --St      Stokes number, any value                     (required)
-      --name    custom directory name   (default: shape_StN)
-      --steps   DEM shear steps          (default: 5000000)
-      --out     parent directory         (default: current dir)
+      --shape   sphere | prolate_2 | prolate_3 | prolate_5    (required)
+      --St      Stokes number, any value                      (required)
+      --name    custom dir name        (default: shape_StN)
+      --steps   DEM shear steps         (default: 5000000)
+      --out     parent directory        (default: current dir)
 
 
 ------------------------------------------------------------------------------
-2) RUN A CASE   (background, resumable — ONLY when cores are free)
+2) RUN A CASE
 ------------------------------------------------------------------------------
-  sqfoam run prolate_3_St100
-      Launches the coupled run in the background. Survives terminal close.
-      If interrupted (sleep/reboot/crash), just run the SAME command again —
-      it resumes from the last shear checkpoint automatically.
+  Three ways, depending on whether you want to watch it live:
 
-  Foreground (watch it live, blocks the terminal):
-      sqfoam run prolate_3_St100 --fg
+  (a) BACKGROUND + LIVE LOG VIEW   <-- RECOMMENDED for long runs
+      Survivable (terminal close won't kill it); watch whenever you like.
+        sqfoam run <case>
+        tail -f <case>/log_solve.txt
+      (Ctrl-C stops only the tail, NOT the simulation.)
+
+  (b) SCREEN + FOREGROUND   <-- watch live AND survivable
+        screen -S v6
+        sqfoam run <case> --fg
+      Detach (keeps running): press  Ctrl-A  then  D
+      Reattach later:  screen -r v6
+      (one-time install:  sudo apt-get install -y screen)
+
+  (c) FOREGROUND ONLY   <-- watch live, but fragile
+        sqfoam run <case> --fg
+      WARNING: Ctrl-C or closing the terminal STOPS the simulation.
+      Use only for short tests, not multi-day runs.
+
+  Any interrupted run RESUMES from the last shear checkpoint - just
+  `sqfoam run <case>` again. Nothing restarts from zero.
 
 
 ------------------------------------------------------------------------------
 3) CHECK A RUN
 ------------------------------------------------------------------------------
-  sqfoam status prolate_3_St100
+  sqfoam status <case>
       Shows: RUNNING or not, current step, granular temperature, and how
-      many orientation frames written (~100+ needed for a converged fit).
-      Check once a day for long runs.
+      many orientation frames are written (~100+ needed for a converged fit).
+
+  Live scroll of a background run at any time:
+      tail -f <case>/log_solve.txt        (Ctrl-C stops watching only)
 
 
 ------------------------------------------------------------------------------
 4) POST-PROCESS  (extract transport coefficients vs. Table I)
 ------------------------------------------------------------------------------
-  sqfoam extract prolate_3_St100
-      Runs the extraction pipeline -> phi, psi, kappa_w, i1, A_xx, A_xz, T,
-      compared against the published Table I values.
-      Meaningful once the run has ~100+ orient frames; before that it reads
-      low and is flagged "preliminary".
+  sqfoam extract <case>
+      Runs the extraction pipeline -> phi, psi, kappa_w, i1, A_xx, A_xz, T
+      vs. published Table I. Meaningful once ~100+ orient frames exist.
 
   Optional:
-      --truth /path/to/coefficients_v6.json   (custom ground-truth file)
+      --truth /path/to/coefficients_v6.json
 
 
 ------------------------------------------------------------------------------
-5) VISUALIZE  (ParaView ellipsoid glyphs — reads only — safe anytime)
+5) VISUALIZE PARTICLES  (ParaView ellipsoid glyphs, reads only, safe anytime)
 ------------------------------------------------------------------------------
-  sqfoam viz prolate_3_St100 --which shear --res 8
-      Generates real ellipsoid VTK meshes + collection.pvd from the dumps.
-      Works on a still-running case (visualizes frames written so far).
-      Prints the .pvd path when done.
+  sqfoam viz <case> --which shear --res 8
 
   Options:
       --which   shear | placement       (default: shear)
-      --res     ellipsoid mesh resolution, higher = smoother/slower (default 8)
+      --res     ellipsoid mesh resolution, higher=smoother/slower (default 8)
 
   Then in ParaView:
-      File -> Open -> .../vtk_shear/collection.pvd -> Apply
+      File -> Open -> <case>/DEM/results/vtk_shear/collection.pvd -> Apply
       Color by:  orientation_angle   (or speed / particle_type / particle_id)
 
 
 ------------------------------------------------------------------------------
-6) GENERATE THE FULL GRID  (all 24 St x aspect-ratio cases at once)
+5b) VISUALIZE CFD CONTINUUM FIELDS  (velocity, voidfraction, pressure, Ksl)
+------------------------------------------------------------------------------
+  sqfoam viz-cfd <case>
+      Reconstructs the parallel CFD data and creates a ParaView stub, then
+      tells you what to open. Color by voidfraction (shows where particles
+      are as a continuum), U (velocity/shear profile), p, or Ksl (drag).
+
+  Faster, skip reconstruct (open processor dirs directly):
+      sqfoam viz-cfd <case> --decomposed
+      (then in ParaView set Case Type = Decomposed Case)
+
+  Then:
+      paraview <case>/CFD/case.foam &
+      -> Apply -> Color by: voidfraction
+
+  OVERLAY BOTH (the point of coupled sim): in the SAME ParaView window,
+  open the CFD case.foam AND the particle collection.pvd together - you see
+  the grains sitting in their fluid field.
+
+  NOTE: unresolved CFD-DEM uses cells bigger than particles, so continuum
+  fields look blocky by design (volume-averaged), not a visualization bug.
+
+
+------------------------------------------------------------------------------
+6) FULL GRID  (all 24 St x aspect-ratio cases)
 ------------------------------------------------------------------------------
   sqfoam grid --full
-      Writes all 24 cases (4 shapes x 6 Stokes numbers) into ./physics_grid/.
-      Then `sqfoam run` each as compute allows, or feed manifest.json to a
-      cluster scheduler as a job array.
+      Writes all 24 cases into ./physics_grid/. Run each with `sqfoam run`
+      as cores allow, or feed physics_grid/manifest.json to a scheduler.
 
 
 ==============================================================================
-  TYPICAL SESSION
+  V6 (dry-limit anchor) - EXACT COMMANDS FOR THIS RUN
 ==============================================================================
-  # generate + launch a new physics-sweep point
-  sqfoam new  --shape prolate_5 --St 10
-  sqfoam run  prolate_5_St10
+  Case path:
+    /home/saeed/sq-cfdem/verification/V6_dry_limit_shear_cell/caseV6
 
-  # ... hours/days later ...
-  sqfoam status  prolate_5_St10          # frames climbing?
-  sqfoam extract prolate_5_St10          # phi(St) point for the paper
-  sqfoam viz     prolate_5_St10          # ellipsoids for a figure
+  NOTE: V6 predates sqfoam, so it needs a one-time alias for the runner:
+    cd /home/saeed/sq-cfdem/verification/V6_dry_limit_shear_cell/caseV6
+    ln -sf runV6_resume.sh run.sh
 
+  Launch (background + live view, recommended):
+    sqfoam run /home/saeed/sq-cfdem/verification/V6_dry_limit_shear_cell/caseV6
+    tail -f /home/saeed/sq-cfdem/verification/V6_dry_limit_shear_cell/caseV6/log_solve.txt
 
-==============================================================================
-  V6 (dry-limit anchor) — CURRENTLY RUNNING
-==============================================================================
   Daily check:
-    sqfoam status  ~/sq-cfdem/verification/V6_dry_limit_shear_cell/caseV6
+    sqfoam status /home/saeed/sq-cfdem/verification/V6_dry_limit_shear_cell/caseV6
 
   When frames > ~100, watch i1 -> 0.68 and phi -> 1.2:
-    sqfoam extract ~/sq-cfdem/verification/V6_dry_limit_shear_cell/caseV6
+    sqfoam extract /home/saeed/sq-cfdem/verification/V6_dry_limit_shear_cell/caseV6
 
-  If it stops (sleep/reboot), resume with:
-    sqfoam run     ~/sq-cfdem/verification/V6_dry_limit_shear_cell/caseV6
+  Visualize current state as ellipsoids:
+    sqfoam viz /home/saeed/sq-cfdem/verification/V6_dry_limit_shear_cell/caseV6
+
+
+==============================================================================
+  TYPICAL NEW-CASE SESSION
+==============================================================================
+    sqfoam new  --shape prolate_5 --St 10
+    sqfoam run  prolate_5_St10
+    tail -f prolate_5_St10/log_solve.txt      # watch live (Ctrl-C safe)
+    # ... hours/days later ...
+    sqfoam status  prolate_5_St10
+    sqfoam extract prolate_5_St10             # phi(St) point for the paper
+    sqfoam viz     prolate_5_St10             # ellipsoids for a figure
+
+
+==============================================================================
+  KEEPING RUNS ALIVE ON THE LAPTOP  (already configured)
+==============================================================================
+  - idle sleep disabled  (gsettings sleep-inactive-ac-type = nothing)
+  - lid-close sleep disabled (gsettings lid-close-*-action = nothing)
+  - systemd sleep masked (sleep/suspend/hibernate/hybrid-sleep -> /dev/null)
+  - keep the laptop plugged in and powered on for multi-day runs
+  - a REBOOT still stops runs; after reboot, re-source shells and
+    `sqfoam run <case>` to resume from the last checkpoint.
 ==============================================================================

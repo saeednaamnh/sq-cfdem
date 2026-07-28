@@ -64,14 +64,14 @@ transportModel  Newtonian;
 nu              nu [ 0 2 -1 0 0 0 0 ] {nu_f:.6e};
 """)
     (cfd/"constant"/"couplingProperties").write_text(COUPLING)
-    dtC=100*contact_dt(s); end=a.steps*contact_dt(s)
+    coupl=100*contact_dt(s); dtC=coupl/2.0; end=a.steps*contact_dt(s)
     (cfd/"system"/"controlDict").write_text(
 f"""FoamFile {{ version 2.0; format ascii; class dictionary; object controlDict; }}
 application     cfdemSolverPisoSQ;
 startFrom startTime; startTime 0; stopAt endTime;
 endTime         {end:.4f};
 deltaT          {dtC:.6e};
-writeControl adjustableRunTime; writeInterval {end/20:.4f}; purgeWrite 3;
+writeControl adjustableRunTime; writeInterval {100*dtC:.6f}; purgeWrite 0;
 writeFormat ascii; writePrecision 7; timeFormat general; timePrecision 6;
 runTimeModifiable yes;
 """)

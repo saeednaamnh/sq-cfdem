@@ -32,7 +32,7 @@ boundary        p p f
 newton          off
 communicate     multi cutoff 0.01 vel yes
 
-read_restart    ../DEM/restarts/restart_placed.liggghts
+read_restart    ../DEM/restarts/restart_shear.liggghts
 
 neighbor        0.15 bin
 neigh_modify    delay 0 every 1 check yes
