@@ -25,6 +25,10 @@ def cmd_new(a):
     txt=txt.replace("variable    a           equal",
         f"variable    N_STEPS     equal   {a.steps}\nvariable    a           equal",1)
     txt=txt.replace("run  5000000","run  ${N_STEPS}")
+    # coupling needs an atom map (fix couple/cfd requirement)
+    if "atom_modify" not in txt:
+        txt=txt.replace("atom_style      superquadric",
+                        "atom_style      superquadric\natom_modify     map array")
     txt=re.sub(r'print "  Steps: \d+"','print "  Steps: ${N_STEPS}"',txt)
     for pat in ["restarts/","results/"]:
         txt=txt.replace(pat,"../DEM/"+pat)
@@ -63,7 +67,12 @@ f"""FoamFile {{ version 2.0; format ascii; class dictionary; object transportPro
 transportModel  Newtonian;
 nu              nu [ 0 2 -1 0 0 0 0 ] {nu_f:.6e};
 """)
-    (cfd/"constant"/"couplingProperties").write_text(COUPLING)
+    # use V6's proven couplingProperties template (has modelType, full config)
+    _tmpl=Path(__file__).parent/"couplingProperties.template"
+    if _tmpl.is_file():
+        (cfd/"constant"/"couplingProperties").write_text(_tmpl.read_text())
+    else:
+        (cfd/"constant"/"couplingProperties").write_text(COUPLING)
     coupl=100*contact_dt(s); dtC=coupl/2.0; end=a.steps*contact_dt(s)
     (cfd/"system"/"controlDict").write_text(
 f"""FoamFile {{ version 2.0; format ascii; class dictionary; object controlDict; }}
