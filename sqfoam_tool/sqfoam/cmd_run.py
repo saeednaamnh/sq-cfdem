@@ -41,5 +41,27 @@ def cmd_status(a):
     print(f"  last step: {step}   T={T}")
     print(f"  orient frames: {frames}" +
           ("  (enough for extraction)" if frames>=100 else "  (need ~100+ for converged fit)"))
+    # dry-divergence check: has coupling made any difference yet?
+    try:
+        import hashlib
+        from config import SHAPES as _SH
+        _shape=None
+        for _s in _SH:
+            if case.name.startswith(_s): _shape=_s; break
+        if _shape:
+            _cfg=load()
+            _dry=os.path.join(_cfg["DRY_RESTARTS"], _shape, "results","shear","dump.orient")
+            if orient.is_file() and os.path.isfile(_dry):
+                def _m(fp):
+                    h=hashlib.md5()
+                    with open(fp,'rb') as f:
+                        for c in iter(lambda: f.read(1<<20), b''): h.update(c)
+                    return h.hexdigest()
+                if _m(str(orient))==_m(_dry):
+                    print("  coupling: NOT YET DIVERGED from dry (ok early; ALARM if persists)")
+                else:
+                    print("  coupling: OK -- diverged from dry reference (real wet physics)")
+    except Exception:
+        pass
     if not alive:
         print(f"  resume: sqfoam run {case}")
