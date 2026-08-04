@@ -1,16 +1,19 @@
 # Known Issues
 
-## CFD field output not written during coupled runs
-The DEM-driven coupling advances particles inside particleCloud.evolve(),
-but OpenFOAM's runTime outer loop does not iterate, so runTime.write() is
-never reached and no CFD time directories are written (processor*/[time]/).
-DEM output (dump.orient, dump.full, stats) is unaffected and correct.
+## RESOLVED: DEM script must not run its own time loop under CFDEM
+Symptom: coupled runs produced results byte-identical to dry runs; no CFD
+fields written; OpenFOAM "Time =" never printed; no "Starting time loop".
 
-Impact: cannot visualize CFD continuum fields (U, voidfraction, p) in
-ParaView. Particle visualization (sqfoam viz) works fully.
+Root cause: the DEM input script contained `run ${N_STEPS}`. Under CFDEM the
+CFD solver owns the time loop and issues `run <couplingInterval>` via the
+runLiggghts command model. A `run N` in the DEM script executes the entire
+simulation during cfdemCloud construction, so the solver never reaches
+`while (runTime.loop())`. Result: no PISO solve, no drag on particles, no
+field output -- a silently dry simulation.
 
-Does NOT affect the science: all transport-coefficient extraction uses the
-DEM orientation data, which is written correctly.
+Fix: DEM script ends with `run 0` only (matches CFDEM tutorial pattern).
+Baked into sqfoam new.
 
-Future fix: patch cfdemSolverPiso.C to force runTime iteration / explicit
-field write at coupling intervals, then rebuild the solver.
+Validation: compare granular_temp.txt against the dry reference AT THE SAME
+STEP. Differ = coupled. Identical = broken. (md5 of dumps is not reliable
+mid-run; partial writes give false divergence.)
