@@ -186,5 +186,5 @@ fi
 cd CFD
 [ -d processor0 ] || { blockMesh > ../log_mesh.txt 2>&1; decomposePar -force > ../log_decomp.txt 2>&1; }
 mpirun -np ${NCORES:-4} cfdemSolverPisoSQ -parallel 2>&1 | tee -a ../log_solve.txt \\
-  | grep -E "satellite points|Shear rate|FATAL|Courant" | head -20
+  | grep -E "satellite points|Shear rate|FATAL|Courant"
 '''
