@@ -1,3 +1,4 @@
+import re
 import os, re, shutil, math
 from pathlib import Path
 from config import load, SHAPES, contact_dt, fluid_props
@@ -39,7 +40,16 @@ fix  cfd2 layerGroup couple/cfd/force/implicit transfer_torque yes
 
 fix  integrate layerGroup nve/superquadric integration_scheme 1""",1)
 
+    # CRITICAL: under CFDEM the CFD solver drives time stepping via
+    # runLiggghts. A "run N" in the DEM script blocks cloud construction
+    # -> CFD loop never iterates -> no coupling, no fields, dry results.
+    txt = re.sub(r"(?m)^run\s+\$\{N_STEPS\}.*$",
+                 "# run ${N_STEPS}  <-- disabled: CFD drives stepping", txt)
+    txt = re.sub(r"(?m)^run\s+5000000.*$",
+                 "# run 5000000  <-- disabled: CFD drives stepping", txt)
+
     (cdir/"DEM"/"restarts").mkdir(parents=True)
+    (cdir/"DEM"/"post"/"restart").mkdir(parents=True, exist_ok=True)
     (cdir/"DEM"/"results"/"shear"/"profiles").mkdir(parents=True)
     (cdir/"DEM"/"in.liggghts_run").write_text(txt)
 
@@ -61,6 +71,13 @@ fix  integrate layerGroup nve/superquadric integration_scheme 1""",1)
         if (tut/"constant"/f).is_file(): shutil.copy(tut/"constant"/f, cfd/"constant"/f)
     dp=(cfd/"system"/"decomposeParDict"); t=dp.read_text()
     t=re.sub(r'n\s*\(\s*\d+\s+\d+\s+\d+\s*\)','n               (2 2 1)',t); dp.write_text(t)
+
+    # _disable_writeLiggghts: needs a post/restart path; not needed here
+    _lc = cfd/"constant"/"liggghtsCommands"
+    if _lc.is_file():
+        _t = _lc.read_text()
+        _t = _t.replace("\n    writeLiggghts", "\n    //writeLiggghts")
+        _lc.write_text(_t)
 
     (cfd/"constant"/"transportProperties").write_text(
 f"""FoamFile {{ version 2.0; format ascii; class dictionary; object transportProperties; }}
