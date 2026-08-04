@@ -25,6 +25,7 @@ from cmd_new     import cmd_new
 from cmd_run     import cmd_run, cmd_status
 from cmd_extract import cmd_extract
 from cmd_viz     import cmd_viz
+from cmd_check   import cmd_check
 from cmd_vizcfd  import cmd_vizcfd
 from cmd_grid    import cmd_grid
 
@@ -66,13 +67,18 @@ def main():
     vc.add_argument("--decomposed", action="store_true",
                     help="open processor dirs directly (skip reconstructPar)")
 
+    ck = sub.add_parser("check", help="verify the run is actually coupled (vs dry)")
+    ck.add_argument("case")
+    ck.add_argument("--shape", default=None,
+                    choices=["sphere","prolate_2","prolate_3","prolate_5"])
+
     g = sub.add_parser("grid", help="generate the full parameter grid")
     g.add_argument("--full", action="store_true")
     g.add_argument("--out", default="physics_grid")
 
     a = p.parse_args()
     {"doctor":cmd_doctor, "new":cmd_new, "run":cmd_run, "status":cmd_status,
-     "extract":cmd_extract, "viz":cmd_viz, "viz-cfd":cmd_vizcfd,
+     "extract":cmd_extract, "viz":cmd_viz, "check":cmd_check, "viz-cfd":cmd_vizcfd,
      "grid":cmd_grid}[a.cmd](a)
 
 if __name__ == "__main__":
