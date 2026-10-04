@@ -80,22 +80,37 @@ inline scalar crosswiseSphericity(const scalar a, const scalar c,
     return 0.25*M_PI*d*d/projectedArea(a,c,cosAlpha);
 }
 
-//- Lengthwise sphericity (Hoelzer-Sommerfeld):
-//  Phi_par = (pi dEq^2 / 4) / (A_particle/2 - A_perp,mean_along)
-//  For spheroids we use the standard approximation with the
-//  projected area along the mean flow-parallel direction.
+//- Mean longitudinal projected area (Hoelzer & Sommerfeld 2008): the projection
+//  of the particle onto planes PARALLEL to the flow, averaged over all viewing
+//  directions normal to the flow. With the symmetry axis at angle alpha to the
+//  flow, a viewing direction at azimuth theta makes cos(beta) = sin(alpha) cos(theta)
+//  with the axis, and the projection is projectedArea(a, c, cos(beta)).
+inline scalar meanLongitudinalArea(const scalar a, const scalar c,
+                                   const scalar cosAlpha)
+{
+    const scalar sinA = std::sqrt(std::max(0.0, 1.0 - cosAlpha*cosAlpha));
+    const int n = 64;                      // midpoint rule on theta in [0, pi/2]
+    scalar sum = 0.0;
+    for (int i = 0; i < n; ++i)
+    {
+        const scalar th = (i + 0.5)*0.5*M_PI/n;
+        sum += projectedArea(a, c, sinA*std::cos(th));
+    }
+    return sum/n;
+}
+
+//- Lengthwise sphericity (Hoelzer & Sommerfeld 2008):
+//  Phi_par = (pi dEq^2/4) / (A_particle/2 - mean longitudinal projected area)
 inline scalar lengthwiseSphericity(const scalar a, const scalar c,
                                    const scalar cosAlpha)
 {
-    const scalar d   = dEq(a,c);
-    const scalar Apar = projectedArea(a,c,cosAlpha);      // area normal to flow
-    const scalar half = 0.5*surfaceArea(a,c);
-    const scalar denom = std::max(half - Apar, 1e-30);
+    const scalar d     = dEq(a,c);
+    const scalar Along = meanLongitudinalArea(a,c,cosAlpha);
+    const scalar half  = 0.5*surfaceArea(a,c);
+    const scalar denom = std::max(half - Along, 1e-30);
     return 0.25*M_PI*d*d/denom;
 }
 
-//- Hoelzer & Sommerfeld (2008) orientation-dependent drag coefficient.
-//  Re based on dEq and slip speed. cosAlpha = k.uhat.
 inline scalar CdHolzerSommerfeld(const scalar Re,
                                  const scalar a, const scalar c,
                                  const scalar cosAlpha)

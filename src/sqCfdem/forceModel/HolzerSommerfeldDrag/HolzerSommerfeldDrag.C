@@ -86,8 +86,12 @@ void HolzerSommerfeldDrag::setForce() const
             fEps = pow(eps, -sqGeom::diFeliceBeta(Re));
         }
 
-        const scalar Aperp = sqGeom::projectedArea(a, c, cosA);
-        const scalar dragCoeff = 0.5*rho*Cd*Aperp*magUr*fEps;  // F = coeff*Ur
+        // Hoelzer & Sommerfeld (2008) define Cd with the cross-section of the
+        // volume-equivalent sphere; the orientation dependence is already in Cd
+        // through the crosswise and lengthwise sphericities, so the projected
+        // area must not be used here (it would count orientation twice).
+        const scalar Aref = 0.25*M_PI*dpEq*dpEq;
+        const scalar dragCoeff = 0.5*rho*Cd*Aref*magUr*fEps;  // F = coeff*Ur
         const vector drag = dragCoeff*Ur;
 
         forceSubM(0).partToArray(index, drag, vector::zero, Ufluid, dragCoeff);
