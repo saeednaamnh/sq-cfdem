@@ -72,7 +72,13 @@ void spheroidRotationTorque::setForce() const
         sqGeom::rotResist(a, c, XC, YC, YH);
 
         const scalar mu = rhoField[cellI]*nufField[cellI];
-        const scalar pref = 8.0*M_PI*mu*a*a*c;
+        // Kim & Karrila (1991) normalise the prolate resistance functions
+        // X^C, Y^C, Y^H (rotResist) by the SEMI-MAJOR axis: T = 8 pi mu c^3 (...).
+        // The near-spherical fallback in rotResist (c <= a: X^C = Y^C = 1)
+        // uses the volume-equivalent radius, R^3 = a^2 c. (Using a^2 c for
+        // prolate particles made every torque too small by a factor c^2/a^2.)
+        const scalar R3 = (c > a) ? c*c*c : a*a*c;
+        const scalar pref = 8.0*M_PI*mu*R3;
 
         const vector dWpar  = (k & dW)*k;
         const vector dWperp = dW - dWpar;
