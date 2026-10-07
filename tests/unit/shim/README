@@ -1,0 +1,3 @@
+Minimal stand-ins for OpenFOAM's vector and tensor types, so that
+src/sqCfdem/common/spheroidGeometry.H can be compiled and tested without OpenFOAM.
+They implement only what the header uses.

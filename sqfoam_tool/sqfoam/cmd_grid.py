@@ -12,7 +12,8 @@ def cmd_grid(a):
     for shape in SHAPES:
         for St in ST_VALUES:
             ns=argparse.Namespace(shape=shape,St=float(St),name=None,
-                                  steps=5000000,out=a.out)
-            try: cmd_new(ns); made+=1
+                                  steps=5000000,out=a.out,voidage=a.voidage,start=a.start)
+            try:
+                if not cmd_new(ns): made+=1          # cmd_new returns 1 on failure
             except SystemExit: pass
-    print(f"\ngrid: attempted {len(SHAPES)*len(ST_VALUES)} cases into {a.out}/")
+    print(f"\ngrid: {made} of {len(SHAPES)*len(ST_VALUES)} cases created and audited into {a.out}/")

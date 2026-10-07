@@ -1,0 +1,205 @@
+"""
+case_checks.py -- read a LIGGGHTS shear template or a finished CFD-DEM case and
+report configuration faults. Pure functions, no side effects; used by
+`sqfoam new` (to build cases correctly or refuse) and `sqfoam check` (to audit).
+
+Every check corresponds to a fault found in earlier cases:
+  A1 coupling fixes present, on the integrator's own group  (silent decoupling)
+  A2 fluid gravity equal to the DEM gravity                  (one-sided buoyancy)
+  A3 fluid wall velocities equal to the DEM wall velocities  (shear mismatch)
+  A4 no active 'run N' in the DEM script                     (blocking run -> no coupling)
+  A5 drag voidage correction stated explicitly               (silent default)
+  A6 hydrodynamic torque model present                       (no fluid torque)
+  A7 lift model only with explicit 'experimental true'       (uncalibrated forces)
+  A8 template particle semi-axes equal to the requested shape (wrong template)
+"""
+import re
+
+NUM = r"[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?"
+
+
+class CaseError(Exception):
+    """A template or case that cannot be built or run correctly."""
+
+
+# --------------------------------------------------------------------- DEM side
+def integrator(txt):
+    """(line, group) of the 'fix <id> <group> nve/superquadric ...' line, or None."""
+    m = re.search(r"(?m)^(fix\s+\S+\s+(\S+)\s+nve/superquadric\b.*)$", txt)
+    return (m.group(1), m.group(2)) if m else None
+
+
+def coupling_group(txt):
+    """Group of the 'couple/cfd/force/implicit' fix, or None if absent."""
+    m = re.search(r"(?m)^fix\s+\S+\s+(\S+)\s+couple/cfd/force/implicit\b", txt)
+    return m.group(1) if m else None
+
+
+def wall_velocity(txt):
+    """Value of 'variable wall_vel equal <number>', or None."""
+    m = re.search(r"(?m)^variable\s+wall_vel\s+equal\s+(" + NUM + r")\s*$", txt)
+    return float(m.group(1)) if m else None
+
+
+def wall_motion_signs(txt):
+    """(upper, lower) sign of the x-velocity in 'fix ... upperGroup/lowerGroup move linear'."""
+    def sign(group):
+        m = re.search(r"(?m)^fix\s+\S+\s+" + group + r"\s+move\s+linear\s+(-?)\$\{wall_vel\}\s+0\s+0", txt)
+        return None if not m else (-1 if m.group(1) else 1)
+    return sign("upperGroup"), sign("lowerGroup")
+
+
+def dem_gravity(txt):
+    """Gravity vector from 'fix ... gravity <mag> vector x y z' (None if no gravity fix).
+    Raises CaseError if the gravity fix uses variables that cannot be evaluated here."""
+    m = re.search(r"(?m)^fix\s+\S+\s+\S+\s+gravity\s+(\S+)\s+vector\s+(\S+)\s+(\S+)\s+(\S+)", txt)
+    if not m:
+        return None
+    try:
+        g, x, y, z = (float(v) for v in m.groups())
+    except ValueError:
+        raise CaseError("the DEM gravity fix uses variables (%s); write numbers so the"
+                        " fluid gravity can be matched" % m.group(0).strip())
+    n = (x * x + y * y + z * z) ** 0.5
+    return (g * x / n, g * y / n, g * z / n)
+
+
+def active_runs(txt):
+    """Lines 'run N' with N > 0 that are not commented out."""
+    out = []
+    for m in re.finditer(r"(?m)^run\s+(\S+)", txt):
+        if m.group(1) not in ("0",):
+            out.append(m.group(0).strip())
+    return out
+
+
+def semi_axes(txt):
+    """(a, b, c) from 'variable a/b/c equal <number>' in the template, or None."""
+    v = {}
+    for k in "abc":
+        m = re.search(r"(?m)^variable\s+" + k + r"\s+equal\s+(" + NUM + r")\s*$", txt)
+        if not m:
+            return None
+        v[k] = float(m.group(1))
+    return v["a"], v["b"], v["c"]
+
+
+def inject_coupling(txt, couple_every=100):
+    """Insert the CFDEM coupling fixes above the nve/superquadric integrator, on the
+    integrator's own group. Raises CaseError instead of returning an uncoupled script."""
+    found = integrator(txt)
+    if not found:
+        raise CaseError("no 'fix <id> <group> nve/superquadric' line in the DEM template:"
+                        " refusing to write a case that would run without coupling")
+    line, group = found
+    if "couple/cfd" in txt:
+        g = coupling_group(txt)
+        if g != group:
+            raise CaseError("template already has coupling fixes, on group '%s' but the"
+                            " integrator acts on '%s'" % (g, group))
+        return txt, group
+    block = ("fix  cfd  all       couple/cfd couple_every %d mpi\n"
+             "fix  cfd2 %s couple/cfd/force/implicit transfer_torque yes\n\n%s"
+             % (couple_every, group, line))
+    new = txt.replace(line, block, 1)
+    if coupling_group(new) != group:
+        raise CaseError("coupling insertion failed (internal error)")
+    return new, group
+
+
+# --------------------------------------------------------------------- CFD side
+def foam_vector(txt, entry):
+    """First 'entry ... ( x y z )' vector after a keyword, e.g. the value in constant/g."""
+    m = re.search(entry + r"[^(;]*\(\s*(" + NUM + r")\s+(" + NUM + r")\s+(" + NUM + r")\s*\)", txt)
+    return tuple(float(v) for v in m.groups()) if m else None
+
+
+def patch_value(u_txt, patch):
+    """Fixed velocity vector of a patch in 0/U, or None."""
+    m = re.search(patch + r"\s*\{[^}]*value\s+uniform\s*\(\s*(" + NUM + r")\s+(" + NUM + r")\s+(" + NUM + r")\s*\)", u_txt)
+    return tuple(float(v) for v in m.groups()) if m else None
+
+
+def force_models(cp_txt):
+    m = re.search(r"forceModels\s*\(([^)]*)\)", cp_txt)
+    return m.group(1).split() if m else []
+
+
+def props_switch(cp_txt, model, key):
+    """Value of 'key' inside '<model>Props { ... }', or None if not stated."""
+    m = re.search(model + r"Props\s*\{([^}]*)\}", cp_txt)
+    if not m:
+        return None
+    k = re.search(r"\b" + key + r"\s+(\S+?)\s*;", m.group(1))
+    return k.group(1) if k else None
+
+
+# --------------------------------------------------------------------- audit
+def audit(dem_txt, g_txt, u_txt, cp_txt, expected_axes=None, tol=1e-9):
+    """Static audit of a case. Returns a list of (id, 'OK'|'FAIL'|'WARN', message)."""
+    R = []
+    integ = integrator(dem_txt)
+    cg = coupling_group(dem_txt)
+    if not integ:
+        R.append(("A1", "FAIL", "no nve/superquadric integrator in the DEM script"))
+    elif cg is None:
+        R.append(("A1", "FAIL", "no couple/cfd/force/implicit fix: the case would run UNCOUPLED"))
+    elif cg != integ[1]:
+        R.append(("A1", "FAIL", "coupling fix on group '%s' but integrator on '%s'" % (cg, integ[1])))
+    else:
+        R.append(("A1", "OK", "coupling on the integrator's group '%s'" % cg))
+
+    try:
+        gd = dem_gravity(dem_txt) or (0.0, 0.0, 0.0)
+        gf = foam_vector(g_txt, "value")
+        if gf is None:
+            R.append(("A2", "FAIL", "cannot read the fluid gravity in constant/g"))
+        elif max(abs(x - y) for x, y in zip(gd, gf)) > 1e-12:
+            R.append(("A2", "FAIL", "fluid gravity %s but DEM gravity %s: one-sided buoyancy" % (gf, gd)))
+        else:
+            R.append(("A2", "OK", "fluid and DEM gravity both %s" % (gf,)))
+    except CaseError as e:
+        R.append(("A2", "FAIL", str(e)))
+
+    uw = wall_velocity(dem_txt)
+    up, lo = wall_motion_signs(dem_txt)
+    top, bot = patch_value(u_txt, "wallTop"), patch_value(u_txt, "wallBottom")
+    if uw is None or up is None or lo is None:
+        R.append(("A3", "FAIL", "cannot read wall_vel and the wall 'move linear' fixes in the DEM script"))
+    elif top is None or bot is None:
+        R.append(("A3", "FAIL", "cannot read the wallTop/wallBottom velocities in 0/U"))
+    elif abs(top[0] - up * uw) > tol or abs(bot[0] - lo * uw) > tol or any(abs(v) > tol for v in top[1:] + bot[1:]):
+        R.append(("A3", "FAIL", "fluid walls move at %s (top) and %s (bottom), DEM walls at %+g and %+g in x"
+                  % (top, bot, up * uw, lo * uw)))
+    else:
+        R.append(("A3", "OK", "fluid and DEM walls both at %+g (top) and %+g (bottom)" % (up * uw, lo * uw)))
+
+    runs = active_runs(dem_txt)
+    R.append(("A4", "FAIL", "active %s in the DEM script blocks the coupled time loop" % runs) if runs
+             else ("A4", "OK", "no active 'run N' in the DEM script"))
+
+    fm = force_models(cp_txt)
+    if "HolzerSommerfeldDrag" in fm:
+        v = props_switch(cp_txt, "HolzerSommerfeldDrag", "voidageCorrection")
+        R.append(("A5", "FAIL", "voidageCorrection not stated in HolzerSommerfeldDragProps") if v is None
+                 else ("A5", "OK", "voidageCorrection %s" % v))
+    else:
+        R.append(("A5", "WARN", "HolzerSommerfeldDrag not among the force models"))
+    R.append(("A6", "OK", "spheroidRotationTorque present") if "spheroidRotationTorque" in fm
+             else ("A6", "WARN", "no spheroidRotationTorque: the fluid exerts no torque on the particles"))
+    if "spheroidLiftTorque" in fm:
+        e = props_switch(cp_txt, "spheroidLiftTorque", "experimental")
+        R.append(("A7", "OK" if e in ("true", "yes", "on") else "FAIL",
+                  "spheroidLiftTorque enabled (experimental %s)" % e))
+    else:
+        R.append(("A7", "OK", "no lift model"))
+
+    if expected_axes:
+        ax = semi_axes(dem_txt)
+        if ax is None:
+            R.append(("A8", "WARN", "cannot read the semi-axes a, b, c in the DEM script"))
+        elif max(abs(x - y) for x, y in zip(ax, expected_axes)) > 1e-6:
+            R.append(("A8", "FAIL", "DEM script semi-axes %s differ from the requested shape %s" % (ax, expected_axes)))
+        else:
+            R.append(("A8", "OK", "semi-axes %s" % (ax,)))
+    return R

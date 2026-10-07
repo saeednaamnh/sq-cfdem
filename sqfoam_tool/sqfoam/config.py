@@ -6,9 +6,11 @@ CONF = Path.home()/".sqfoam.conf"
 # per-shape geometry + dry shear rate (from Table I)
 SHAPES = {
     "sphere":    dict(a=0.3420,b=0.3420,c=0.3420,N=3724, gd=0.06984, ca=1.0),
-    "prolate_2": dict(a=0.2714,b=0.2714,c=0.5429,N=3780, gd=0.06758, ca=2.0),
-    "prolate_3": dict(a=0.2371,b=0.2371,c=0.7114,N=3804, gd=0.06971, ca=3.0),
-    "prolate_5": dict(a=0.2000,b=0.2000,c=1.0000,N=3830, gd=0.02225, ca=5.0),
+    # gd: measured bulk shear rate of the published dry baseline run (JFM paper),
+    # used to convert a Stokes number into a fluid viscosity; U: its wall speed.
+    "prolate_2": dict(a=0.2714,b=0.2714,c=0.5429,N=3780, gd=0.0722, ca=2.0, U=1.0,   nu_core=0.528),
+    "prolate_3": dict(a=0.2371,b=0.2371,c=0.7114,N=3804, gd=0.0752, ca=3.0, U=1.0,   nu_core=0.539),
+    "prolate_5": dict(a=0.2000,b=0.2000,c=1.0000,N=3830, gd=0.2393, ca=5.0, U=5.232, nu_core=0.560),
 }
 RHO_P, KN = 1.0, 2e5
 
@@ -18,6 +20,9 @@ DEFAULTS = {
     "TUTORIAL_CFD": str(Path.home()/
         "CFDEM/CFDEMcoupling-PUBLIC/tutorials/cfdemSolverPiso/ErgunTestMPI/CFD"),
     "DRY_RESTARTS": str(Path.home()/"Desktop/aspect_ratio_sweep/cases"),
+    # folder of each shape's published dry baseline under DRY_RESTARTS
+    "TEMPLATE_DIRS": {"sphere": "sphere", "prolate_2": "prolate_2_v2",
+                      "prolate_3": "prolate_3", "prolate_5": "prolate_5_dry"},
     "EXTRACT_PIPELINE": str(Path.home()/"Desktop/aspect_ratio_sweep"),
     "POSTPROCESS_PY": str(Path.home()/
         "Desktop/aspect_ratio_sweep/postprocess/postprocess_shear.py"),

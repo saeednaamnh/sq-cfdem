@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from config import load, SHAPES
+import case_checks as C
 
 def _read_T(path, step=None):
     if not os.path.isfile(path): return None
@@ -27,11 +28,25 @@ def cmd_check(a):
         print("!! cannot infer shape; pass --shape prolate_3"); return
 
     run_T = case/"DEM"/"results"/"shear"/"granular_temp.txt"
-    dry_T = Path(cfg["DRY_RESTARTS"])/shape/"results"/"shear"/"granular_temp.txt"
+    dry_T = Path(cfg["DRY_RESTARTS"])/cfg["TEMPLATE_DIRS"][shape]/"results"/"shear"/"granular_temp.txt"
 
     print("="*64)
-    print("  COUPLING CHECK — %s  (shape %s)" % (case.name, shape))
+    print("  CONFIGURATION AUDIT — %s  (shape %s)" % (case.name, shape))
     print("="*64)
+    files = [case/"DEM"/"in.liggghts_run", case/"CFD"/"constant"/"g",
+             case/"CFD"/"0"/"U", case/"CFD"/"constant"/"couplingProperties"]
+    missing = [str(f) for f in files if not f.is_file()]
+    if missing:
+        print("  cannot audit, missing: %s" % ", ".join(missing))
+    else:
+        s = SHAPES[shape]
+        R = C.audit(*(f.read_text() for f in files), expected_axes=(s["a"], s["b"], s["c"]))
+        for i, st, m in R:
+            print("  [%-4s] %s %s" % (st, i, m))
+        if any(st == "FAIL" for _, st, _ in R):
+            print("\n  *** do not run this case until every FAIL is fixed ***")
+    print()
+    print("  COUPLING LIVENESS (wet vs dry granular temperature)")
 
     if not run_T.is_file():
         print("  no granular_temp.txt yet"); return

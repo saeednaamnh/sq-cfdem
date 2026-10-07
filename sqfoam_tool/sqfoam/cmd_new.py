@@ -6,6 +6,19 @@ from config import load, SHAPES, contact_dt, fluid_props
 def _coupling(): return COUPLING
 def _blockmesh(): return BLOCKMESH
 
+import case_checks as C
+
+
+def _start_restart(tdir, start):
+    """Restart file the case starts from: the placement, or the dry baseline's final state."""
+    if start == "placed":
+        return tdir/"restarts"/"restart_placed.liggghts"
+    cands = sorted((tdir/"restarts").glob("restart_shear*.liggghts"), key=lambda p: p.stat().st_mtime)
+    if not cands:
+        raise C.CaseError("--start dry: no restart_shear*.liggghts in %s" % (tdir/"restarts"))
+    return cands[-1]
+
+
 def cmd_new(a):
     cfg=load(); s=SHAPES[a.shape]
     name=a.name or f"{a.shape}_St{int(a.St) if a.St==int(a.St) else a.St}"
@@ -15,14 +28,20 @@ def cmd_new(a):
         print(f"!! {cdir} exists — pick another --name or remove it"); return
     rho_f,nu_f,mu_f,tau_p=fluid_props(s,a.St)
 
-    # --- DEM script: transform the user's in_shear.lmp template ---
-    tmpl=None
-    for cand in [Path(cfg["DRY_RESTARTS"])/a.shape/"in_shear.lmp",
-                 Path(cfg["DRY_RESTARTS"])/"prolate_3"/"in_shear.lmp"]:
-        if cand.is_file(): tmpl=cand; break
-    if not tmpl:
-        print("!! no in_shear.lmp template found under DRY_RESTARTS"); return
+    # --- DEM script: the shape's own published dry baseline, no fallback ---
+    tdir=Path(cfg["DRY_RESTARTS"])/cfg["TEMPLATE_DIRS"][a.shape]
+    tmpl=tdir/"in_shear.lmp"
+    if not tmpl.is_file():
+        print(f"!! no template {tmpl} (set TEMPLATE_DIRS in ~/.sqfoam.conf)"); return 1
     txt=tmpl.read_text()
+    ax=C.semi_axes(txt)
+    if ax is None or max(abs(x-y) for x,y in zip(ax,(s["a"],s["b"],s["c"])))>1e-6:
+        print(f"!! {tmpl} has semi-axes {ax}, not those of {a.shape}"); return 1
+    uw=C.wall_velocity(txt); up,lo=C.wall_motion_signs(txt)
+    if uw is None or up is None or lo is None:
+        print(f"!! cannot read wall_vel / wall 'move linear' fixes in {tmpl}"); return 1
+    if abs(uw-s["U"])>1e-9:
+        print(f"!! {tmpl} moves the walls at {uw}, but the {a.shape} baseline is at U={s['U']}"); return 1
     txt=txt.replace("variable    a           equal",
         f"variable    N_STEPS     equal   {a.steps}\nvariable    a           equal",1)
     txt=txt.replace("run  5000000","run  ${N_STEPS}")
@@ -33,12 +52,10 @@ def cmd_new(a):
     txt=re.sub(r'print "  Steps: \d+"','print "  Steps: ${N_STEPS}"',txt)
     for pat in ["restarts/","results/"]:
         txt=txt.replace(pat,"../DEM/"+pat)
-    txt=txt.replace(
-"fix  integrate layerGroup nve/superquadric integration_scheme 1",
-"""fix  cfd  all       couple/cfd couple_every 100 mpi
-fix  cfd2 layerGroup couple/cfd/force/implicit transfer_torque yes
-
-fix  integrate layerGroup nve/superquadric integration_scheme 1""",1)
+    try:
+        txt, group = C.inject_coupling(txt, couple_every=100)
+    except C.CaseError as e:
+        print(f"!! {e}"); return 1
 
     # CRITICAL: under CFDEM the CFD solver drives time stepping via
     # runLiggghts. A "run N" in the DEM script blocks cloud construction
@@ -53,13 +70,18 @@ fix  integrate layerGroup nve/superquadric integration_scheme 1""",1)
     (cdir/"DEM"/"results"/"shear"/"profiles").mkdir(parents=True)
     (cdir/"DEM"/"in.liggghts_run").write_text(txt)
 
-    # symlink placement restart (particle-for-particle with Table I)
-    src_restart=Path(cfg["DRY_RESTARTS"])/a.shape/"restarts"/"restart_placed.liggghts"
-    link=cdir/"DEM"/"restarts"/"restart_placed.liggghts"
+    # starting state: placement (cold start) or the dry baseline's final state.
+    # run.sh resumes from restart_shear.liggghts if present, else restart_placed.
+    try:
+        src_restart=_start_restart(tdir, a.start)
+    except C.CaseError as e:
+        print(f"!! {e}"); return 1
+    lname="restart_placed.liggghts" if a.start=="placed" else "restart_shear.liggghts"
+    link=cdir/"DEM"/"restarts"/lname
     if src_restart.is_file():
         os.symlink(src_restart, link); rlink=f"linked -> {src_restart}"
     else:
-        rlink=f"MISSING: put restart_placed.liggghts at {link}"
+        print(f"!! missing restart {src_restart}"); return 1
 
     # --- CFD side ---
     cfd=cdir/"CFD"; (cfd/"0").mkdir(parents=True)
@@ -69,6 +91,13 @@ fix  integrate layerGroup nve/superquadric integration_scheme 1""",1)
         shutil.copy(tut/"system"/f, cfd/"system"/f)
     for f in ["g","liggghtsCommands","turbulenceProperties","RASProperties"]:
         if (tut/"constant"/f).is_file(): shutil.copy(tut/"constant"/f, cfd/"constant"/f)
+    # fluid gravity = DEM gravity (zero if the DEM script has none): no one-sided buoyancy
+    try:
+        gvec=C.dem_gravity(txt) or (0.0,0.0,0.0)
+    except C.CaseError as e:
+        print(f"!! {e}"); shutil.rmtree(cdir); return 1
+    gf=cfd/"constant"/"g"
+    gf.write_text(re.sub(r"value\s*\([^)]*\)\s*;", "value           ( %r %r %r );" % gvec, gf.read_text()))
     dp=(cfd/"system"/"decomposeParDict"); t=dp.read_text()
     t=re.sub(r'n\s*\(\s*\d+\s+\d+\s+\d+\s*\)','n               (2 2 1)',t); dp.write_text(t)
 
@@ -86,10 +115,11 @@ nu              nu [ 0 2 -1 0 0 0 0 ] {nu_f:.6e};
 """)
     # use V6's proven couplingProperties template (has modelType, full config)
     _tmpl=Path(__file__).parent/"couplingProperties.template"
-    if _tmpl.is_file():
-        (cfd/"constant"/"couplingProperties").write_text(_tmpl.read_text())
-    else:
-        (cfd/"constant"/"couplingProperties").write_text(COUPLING)
+    cp=_tmpl.read_text() if _tmpl.is_file() else COUPLING
+    cp, nv = re.subn(r"voidageCorrection\s+\S+?\s*;", f"voidageCorrection       {a.voidage};", cp)
+    if nv != 1:
+        print("!! couplingProperties template: expected one voidageCorrection entry"); return 1
+    (cfd/"constant"/"couplingProperties").write_text(cp)
     coupl=100*contact_dt(s); dtC=coupl/2.0; end=a.steps*contact_dt(s)
     (cfd/"system"/"controlDict").write_text(
 f"""FoamFile {{ version 2.0; format ascii; class dictionary; object controlDict; }}
@@ -102,17 +132,31 @@ writeFormat ascii; writePrecision 7; timeFormat general; timePrecision 6;
 runTimeModifiable yes;
 """)
     (cfd/"system"/"blockMeshDict").write_text(BLOCKMESH)
-    _mkfields(cfd/"0", rho_f)
+    _mkfields(cfd/"0", rho_f, top=up*uw, bottom=lo*uw)
 
     # resumable runner
     (cdir/"run.sh").write_text(RUNNER); os.chmod(cdir/"run.sh",0o755)
 
+    # static audit of what was just written; an invalid case is renamed, not left runnable
+    R=C.audit((cdir/"DEM"/"in.liggghts_run").read_text(), gf.read_text(),
+              (cfd/"0"/"U").read_text(), (cfd/"constant"/"couplingProperties").read_text(),
+              expected_axes=(s["a"],s["b"],s["c"]))
+    for i,st,m in R: print(f"  [{st:4}] {i} {m}")
+    if any(st=="FAIL" for _,st,_ in R):
+        bad=cdir.with_name(cdir.name+".INVALID"); cdir.rename(bad)
+        print(f"!! audit failed: case moved to {bad}"); return 1
+
     print(f"created {cdir}")
-    print(f"  shape={a.shape} (c/a={s['ca']})  St={a.St}  nu_f={nu_f:.3e}  tau_p={tau_p:.1f}")
+    print(f"  shape={a.shape} (c/a={s['ca']})  St={a.St} (isolated particle)  nu_f={nu_f:.3e}  tau_p={tau_p:.1f}")
+    if a.voidage=="on" and "nu_core" in s:
+        eps=1.0-s["nu_core"]                      # Stokes regime: K ~ eps^(1-chi), chi -> 3.7
+        print(f"  with the voidage correction the drag in the core is ~{eps**(1-3.7):.1f}x the isolated value:"
+              f" effective St ~ {a.St*eps**(3.7-1):.3g}")
+    print(f"  start: {a.start}")
     print(f"  restart: {rlink}")
     print(f"  -> sqfoam run {cdir}")
 
-def _mkfields(z, rho_f):
+def _mkfields(z, rho_f, top, bottom):
     def w(n,cls,dim,intern,wb,wt):
         (z/n).write_text(
 f"""FoamFile {{ version 2.0; format ascii; class {cls}; object {n}; }}
@@ -122,7 +166,7 @@ boundaryField {{ cycXa {{ type cyclic; }} cycXb {{ type cyclic; }}
  wallBottom {{ {wb} }} wallTop {{ {wt} }} }}
 """)
     w("U","volVectorField","[0 1 -1 0 0 0 0]","(0 0 0)",
-      "type fixedValue; value uniform (-1 0 0);","type fixedValue; value uniform (1 0 0);")
+      f"type fixedValue; value uniform ({bottom!r} 0 0);",f"type fixedValue; value uniform ({top!r} 0 0);")
     w("p","volScalarField","[0 2 -2 0 0 0 0]","0","type zeroGradient;","type zeroGradient;")
     w("voidfraction","volScalarField","[0 0 0 0 0 0 0]","1","type zeroGradient;","type zeroGradient;")
     w("Ksl","volScalarField","[1 -3 -1 0 0 0 0]","0","type zeroGradient;","type zeroGradient;")

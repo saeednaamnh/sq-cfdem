@@ -45,6 +45,10 @@ def main():
     n.add_argument("--name", default=None, help="case dir name (default: shape_StN)")
     n.add_argument("--steps", type=int, default=5000000, help="DEM shear steps")
     n.add_argument("--out", default=None, help="parent dir (default: cwd)")
+    n.add_argument("--voidage", required=True, choices=["on", "off"],
+                   help="Di Felice voidage correction of the drag (no default: state it)")
+    n.add_argument("--start", default="placed", choices=["placed", "dry"],
+                   help="start from the placement restart, or from the final state of the dry baseline")
 
     r = sub.add_parser("run", help="launch resumable coupled run (background)")
     r.add_argument("case"); r.add_argument("--fg", action="store_true",
@@ -75,6 +79,8 @@ def main():
     g = sub.add_parser("grid", help="generate the full parameter grid")
     g.add_argument("--full", action="store_true")
     g.add_argument("--out", default="physics_grid")
+    g.add_argument("--voidage", required=True, choices=["on", "off"])
+    g.add_argument("--start", default="placed", choices=["placed", "dry"])
 
     a = p.parse_args()
     {"doctor":cmd_doctor, "new":cmd_new, "run":cmd_run, "status":cmd_status,
