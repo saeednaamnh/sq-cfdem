@@ -34,10 +34,9 @@ HolzerSommerfeldDrag::HolzerSommerfeldDrag
     (
         sm.mesh().lookupObject<volScalarField>(voidfractionFieldName_)
     ),
-    useDiFeliceCorrection_
-    (
-        propsDict_.lookupOrDefault<Switch>("voidageCorrection", true)
-    )
+    // No default: whether the drag is corrected for the local solid fraction
+    // changes the physics of every dense case, so the user must state it.
+    useDiFeliceCorrection_(propsDict_.lookup("voidageCorrection"))
 {
     setForceSubModels(propsDict_);
     forceSubM(0).readSwitches();
@@ -64,6 +63,14 @@ void HolzerSommerfeldDrag::setForce() const
         if (magUr < SMALL) continue;
 
         const vector shp = particleCloud_.shape(index);
+        const vector2D blk = particleCloud_.blockiness(index);
+        const std::string why =
+            sqGeom::unsupportedShape(shp.x(), shp.y(), shp.z(), blk.x(), blk.y());
+        if (!why.empty())
+        {
+            FatalError << "HolzerSommerfeldDrag: particle " << index << ": "
+                       << why.c_str() << abort(FatalError);
+        }
         const scalar a = shp.x();
         const scalar c = shp.z();
 
@@ -73,25 +80,15 @@ void HolzerSommerfeldDrag::setForce() const
 
         const scalar cosA = mag(k & (Ur/magUr));
 
-        const scalar rho  = rhoField[cellI];
-        const scalar nuf  = nufField[cellI];
-        const scalar dpEq = sqGeom::dEq(a,c);
-        const scalar Re   = dpEq*magUr/nuf;
-        const scalar Cd   = sqGeom::CdHolzerSommerfeld(Re, a, c, cosA);
-
-        scalar fEps = 1.0;
-        if (useDiFeliceCorrection_)
-        {
-            const scalar eps = voidfraction_[cellI];
-            fEps = pow(eps, -sqGeom::diFeliceBeta(Re));
-        }
-
-        // Hoelzer & Sommerfeld (2008) define Cd with the cross-section of the
-        // volume-equivalent sphere; the orientation dependence is already in Cd
-        // through the crosswise and lengthwise sphericities, so the projected
-        // area must not be used here (it would count orientation twice).
-        const scalar Aref = 0.25*M_PI*dpEq*dpEq;
-        const scalar dragCoeff = 0.5*rho*Cd*Aref*magUr*fEps;  // F = coeff*Ur
+        // Hoelzer & Sommerfeld C_D referred to the volume-equivalent sphere,
+        // optionally with the Di Felice voidage correction in its standard
+        // (superficial-velocity) form; see sqGeom::dragCoefficient.
+        scalar Re = 0;
+        const scalar dragCoeff = sqGeom::dragCoefficient
+        (
+            rhoField[cellI], nufField[cellI], a, c, cosA, magUr,
+            voidfraction_[cellI], useDiFeliceCorrection_, Re
+        );                                                   // F = coeff*Ur
         const vector drag = dragCoeff*Ur;
 
         forceSubM(0).partToArray(index, drag, vector::zero, Ufluid, dragCoeff);

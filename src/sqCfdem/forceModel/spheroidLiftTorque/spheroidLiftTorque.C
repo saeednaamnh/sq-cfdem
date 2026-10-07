@@ -29,6 +29,19 @@ spheroidLiftTorque::spheroidLiftTorque(const dictionary& dict, cfdemCloud& sm)
     spinDamping_(propsDict_.lookupOrDefault<Switch>("spinDamping", true)),
     sqCloud_(nullptr)   // cast deferred: cloud not fully constructed yet
 {
+    // The lift and pitching-torque prefactors are user-supplied placeholders,
+    // not calibrated correlations (see sqGeom::ClSpheroid / CtSpheroid). Refuse
+    // to run unless the user acknowledges this explicitly.
+    if (!propsDict_.lookupOrDefault<Switch>("experimental", false))
+    {
+        FatalError
+            << "spheroidLiftTorque: the lift and pitching-torque coefficients are"
+            << " uncalibrated placeholders (liftPrefactor, liftReExponent,"
+            << " torquePrefactor, torqueReExponent). Calibrate them for your"
+            << " particles, then set 'experimental true;' in "
+            << typeName << "Props to use this model knowingly."
+            << abort(FatalError);
+    }
     setForceSubModels(propsDict_);
     forceSubM(0).readSwitches();
 }

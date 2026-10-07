@@ -39,20 +39,13 @@ dividedVoidFractionSuperquadric::dividedVoidFractionSuperquadric
     maxCellsPerParticle_ =
         propsDict_.lookupOrDefault<label>("maxCellsPerParticle", 30);
 
-    // unit-ball quasi-uniform marker set (Fibonacci shells + centre),
-    // scaled per particle by semi-axes (a,b,c) at use time.
-    unitMarkers_.setSize(nSat_);
-    unitMarkers_[0] = vector::zero;
-    const label nShell = nSat_ - 1;
-    const scalar golden = M_PI*(3.0 - std::sqrt(5.0));
-    for (label i = 0; i < nShell; i++)
-    {
-        const scalar r  = std::cbrt((i + 0.5)/nShell);
-        const scalar zz = 1.0 - 2.0*(i + 0.5)/nShell;
-        const scalar rho = std::sqrt(std::max(0.0, 1.0 - zz*zz));
-        const scalar th = golden*i;
-        unitMarkers_[i+1] = r*vector(rho*std::cos(th), rho*std::sin(th), zz);
-    }
+    // Unit-ball markers in antipodal pairs (centroid exactly zero), scaled per
+    // particle by the semi-axes (a,b,c) at use time; see sqGeom::unitBallMarkers.
+    // (The previous set tied radius to direction, which shifted each particle's
+    // deposited volume by about 11 % of c along its own axis.)
+    const std::vector<vector> m = sqGeom::unitBallMarkers(nSat_);
+    unitMarkers_.setSize(label(m.size()));
+    forAll(unitMarkers_, i) unitMarkers_[i] = m[i];
     Info << type() << ": " << nSat_ << " satellite points per particle" << endl;
 }
 
@@ -72,6 +65,8 @@ void dividedVoidFractionSuperquadric::setvoidFraction
     voidfractionNext_.primitiveFieldRef() = 1.0;
 
     const scalarField& cellVol = voidfractionNext_.mesh().V();
+    static label nCalls = 0;  ++nCalls;
+    label lostThisCall = 0, overflowThisCall = 0;
 
     for (int index = 0; index < particleCloud_.numberOfParticles(); index++)
     {
@@ -88,19 +83,29 @@ void dividedVoidFractionSuperquadric::setvoidFraction
 
         const vector pos   = particleCloud_.position(index);
         const vector shp   = particleCloud_.shape(index);      // (a,b,c)
+        const vector2D blk = particleCloud_.blockiness(index);
+        const std::string why =
+            sqGeom::unsupportedShape(shp.x(), shp.y(), shp.z(), blk.x(), blk.y());
+        if (!why.empty())
+        {
+            FatalError << "dividedSuperquadric: particle " << index << ": "
+                       << why.c_str() << abort(FatalError);
+        }
         const scalar Vp    = particleCloud_.volume(index);
-        const scalar subV  = Vp/nSat_;
+        const scalar subV  = Vp/unitMarkers_.size();
 
         const quaternion q = particleCloud_.quat(index);
         const scalar qw = q.w();
         const vector qv = q.v();
         const tensor R  = sqGeom::quatToRot(qw, qv.x(), qv.y(), qv.z());
 
-        label nSlots = 0;
+        // Slot 0 is always the cell of the particle centre: the drag and torque
+        // models read the fluid there (cellIDs[index][0]).
+        label nSlots = 1;
         labelList slotCell(maxCellsPerParticle_, label(-1));
-        label lostSat = 0;
+        slotCell[0] = cellCentre;
 
-        for (label s = 0; s < nSat_; s++)
+        for (label s = 0; s < label(unitMarkers_.size()); s++)
         {
             vector xb
             (
@@ -111,18 +116,19 @@ void dividedVoidFractionSuperquadric::setvoidFraction
             vector xw  = pos + (R & xb);   // non-const: locate API takes refs
             label seed = cellCentre;
 
-            const label cellI =
-                particleCloud_.locateM().findSingleCell(xw, seed);
+            label cellI = particleCloud_.locateM().findSingleCell(xw, seed);
 
-            if (cellI < 0) { lostSat++; continue; }  // TODO(build-2): stash +
-                                                     // parallel scatter-gather
+            // A marker outside this processor's cells (another processor, or
+            // outside the mesh) is deposited in the centre cell, so that no
+            // particle volume is lost; its location is then approximate.
+            if (cellI < 0) { cellI = cellCentre; lostThisCall++; }
 
             label slot = -1;
             for (label t = 0; t < nSlots; t++)
                 if (slotCell[t] == cellI) { slot = t; break; }
             if (slot < 0)
             {
-                if (nSlots >= maxCellsPerParticle_) slot = 0;
+                if (nSlots >= maxCellsPerParticle_) { slot = 0; overflowThisCall++; }
                 else
                 {
                     slot = nSlots++;
@@ -131,23 +137,22 @@ void dividedVoidFractionSuperquadric::setvoidFraction
                 }
             }
 
-            particleWeights[index][slot] += 1.0/nSat_;
+            const label cellS = slotCell[slot];
+            particleWeights[index][slot] += 1.0/unitMarkers_.size();
             particleVolumes[index][slot] += subV;
-            voidfractionNext_[cellI]     -= subV/cellVol[cellI];
+            voidfractionNext_[cellS]     -= subV/cellVol[cellS];
         }
-        cellsPerParticle_[index][0] = scalar(max(nSlots, label(1)));
-
-        if (lostSat > 0 && lostSat < nSat_)
-        {
-            const scalar f = scalar(nSat_)/scalar(nSat_ - lostSat);
-            for (label t = 0; t < nSlots; t++)
-            {
-                particleWeights[index][t] *= f;
-                particleVolumes[index][t] *= f;
-            }
-        }
+        cellsPerParticle_[index][0] = scalar(nSlots);
 
         particleV[index][0] = Vp;
+    }
+
+    if ((lostThisCall > 0 || overflowThisCall > 0) && (nCalls <= 3 || nCalls % 1000 == 0))
+    {
+        Pout<< type() << ": call " << nCalls << ": " << lostThisCall
+            << " markers outside this processor's cells and " << overflowThisCall
+            << " beyond maxCellsPerParticle were deposited in the particle's"
+            << " centre cell (volume conserved, location approximate)" << endl;
     }
 
     forAll(voidfractionNext_, cI)

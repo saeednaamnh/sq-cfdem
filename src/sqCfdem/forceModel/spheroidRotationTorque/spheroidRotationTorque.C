@@ -55,6 +55,14 @@ void spheroidRotationTorque::setForce() const
         if (cellI < 0) continue;
 
         const vector shp = particleCloud_.shape(index);
+        const vector2D blk = particleCloud_.blockiness(index);
+        const std::string why =
+            sqGeom::unsupportedShape(shp.x(), shp.y(), shp.z(), blk.x(), blk.y());
+        if (!why.empty())
+        {
+            FatalError << "spheroidRotationTorque: particle " << index << ": "
+                       << why.c_str() << abort(FatalError);
+        }
         const scalar a = shp.x(), c = shp.z();
 
         const quaternion q = particleCloud_.quat(index);

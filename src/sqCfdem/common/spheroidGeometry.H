@@ -3,8 +3,10 @@
     License: GPLv3 (inherited from CFDEMcoupling)
 
     spheroidGeometry.H
-    Header-only helpers for prolate spheroids (a = b < c), n1 = n2 = 2.
+    Header-only helpers for prolate spheroids (a = b <= c), n1 = n2 = 2.
     All functions are pure math: no OpenFOAM state, unit-agnostic.
+    Models must call unsupportedShape() and abort on a non-empty reason:
+    the closures below are valid for prolate spheroids and spheres only.
 \*---------------------------------------------------------------------------*/
 
 #ifndef spheroidGeometry_H
@@ -13,6 +15,9 @@
 #include "vector.H"
 #include "tensor.H"
 #include <cmath>
+#include <string>
+#include <vector>
+#include <algorithm>
 
 namespace Foam
 {
@@ -133,6 +138,80 @@ inline scalar diFeliceBeta(const scalar Re)
     return 3.7 - 0.65*std::exp(-0.5*x*x);
 }
 
+//- Supported shapes: superquadrics with blockiness n1 = n2 = 2 and semi-axes
+//  a = b <= c (prolate spheroids, spheres). Returns an empty string if the shape
+//  is supported, otherwise the reason; callers abort with it, because the drag,
+//  torque and void-fraction closures are not valid for other shapes.
+inline std::string unsupportedShape(const scalar a, const scalar b, const scalar c,
+                                    const scalar n1, const scalar n2)
+{
+    const scalar tol = 1e-6;
+    if (std::fabs(n1 - 2.0) > tol || std::fabs(n2 - 2.0) > tol)
+        return "blockiness (n1, n2) must be (2, 2): the drag and torque closures "
+               "are for spheroids, not general superquadrics";
+    if (std::fabs(a - b) > tol*std::max(a, b))
+        return "semi-axes a and b must be equal: the closures are for "
+               "axisymmetric spheroids";
+    if (c < a*(1.0 - tol))
+        return "oblate spheroids (c < a) are not supported: the closures are "
+               "for prolate spheroids and spheres";
+    return std::string();
+}
+
+//- Drag coefficient K such that F = K (u_f - u_p), with the Hoelzer &
+//  Sommerfeld (2008) C_D referred to the volume-equivalent sphere.
+//  Without voidage correction: Re = d |u_r| / nu, K = 1/2 rho C_D A |u_r|.
+//  With the Di Felice (1994) correction the single-particle drag is evaluated
+//  with the SUPERFICIAL slip eps |u_r| (Reynolds number included) and multiplied
+//  by eps^-chi, so K = 1/2 rho C_D(Re) A eps^(2-chi) |u_r| with Re = eps d |u_r|/nu,
+//  exactly as in CFDEMcoupling's DiFeliceDrag. Re returns the value used.
+inline scalar dragCoefficient
+(
+    const scalar rho, const scalar nu, const scalar a, const scalar c,
+    const scalar cosAlpha, const scalar magUr, const scalar eps,
+    const bool voidage, scalar& Re
+)
+{
+    const scalar d    = dEq(a,c);
+    const scalar Aref = 0.25*M_PI*d*d;
+    if (!voidage)
+    {
+        Re = d*magUr/nu;
+        return 0.5*rho*CdHolzerSommerfeld(Re, a, c, cosAlpha)*Aref*magUr;
+    }
+    Re = eps*d*magUr/nu;
+    return 0.5*rho*CdHolzerSommerfeld(Re, a, c, cosAlpha)*Aref*magUr
+          *std::pow(eps, 2.0 - diFeliceBeta(Re));
+}
+
+//- Satellite markers filling the unit ball, for the divided void fraction.
+//  Antipodal pairs, so the centroid is exactly zero and the deposited volume
+//  stays centred on the particle for any orientation; directions on a
+//  Fibonacci hemisphere, radii from equal-volume shells assigned in an order
+//  decorrelated from the direction. An odd count adds the centre point.
+inline std::vector<vector> unitBallMarkers(const int n)
+{
+    std::vector<vector> P;
+    if (n % 2) P.push_back(vector(0, 0, 0));
+    const int m = n/2;                                 // antipodal pairs
+    if (m == 0) return P;
+    int step = std::max(1, int(std::floor(0.6180339887*m)));
+    auto gcd = [](int x, int y) { while (y) { const int t = x % y; x = y; y = t; } return x; };
+    while (gcd(step, m) != 1) ++step;                  // permutation j -> j*step mod m
+    const scalar golden = M_PI*(3.0 - std::sqrt(5.0));
+    for (int j = 0; j < m; j++)
+    {
+        const scalar zz  = 1.0 - (j + 0.5)/m;          // upper hemisphere; antipode covers the lower
+        const scalar rho = std::sqrt(std::max(0.0, 1.0 - zz*zz));
+        const scalar th  = golden*j;
+        const scalar r   = std::cbrt((((j*step) % m) + 0.5)/m);
+        const vector p(r*rho*std::cos(th), r*rho*std::sin(th), r*zz);
+        P.push_back(p);
+        P.push_back(vector(-p.x(), -p.y(), -p.z()));
+    }
+    return P;
+}
+
 //- Bretherton constant B = (lam^2-1)/(lam^2+1), lam = c/a
 inline scalar bretherton(const scalar a, const scalar c)
 {
@@ -168,8 +247,9 @@ inline scalar CtSpheroid(const scalar Re, const scalar sinA, const scalar cosA,
 }
 
 
-//- Rotational resistance functions for a prolate spheroid (Kim & Karrila).
-//  Torque: T = 8 pi mu a^2 c [ XC dW_par + YC dW_perp + YH k x (E.k) ],
+//- Rotational resistance functions for a prolate spheroid (Kim & Karrila),
+//  normalised by the semi-major axis c.
+//  Torque: T = 8 pi mu c^3 [ XC dW_par + YC dW_perp + YH k x (E.k) ],
 //  dW = 0.5 curl(u) - omega_p. Sphere limit: (XC,YC,YH) -> (1,1,0) so
 //  T -> 8 pi mu R^3 (W_f - w_p). Identity YH/YC = Bretherton B(lam)
 //  guarantees torque-free particles follow Jeffery's equation exactly.
