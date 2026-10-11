@@ -104,7 +104,7 @@ void dividedVoidFractionSuperquadric::setvoidFraction
         cellsPerParticle_[index][0] = 1.;
         particleV[index][0] = 0;
 
-        // excluded types (e.g. wall spheres) take no volume and no forces
+        // particles not coupled to the fluid (e.g. wall spheres): no volume, no forces
         if (sq->excluded(index)) { nExcluded++; continue; }
 
         const label cellCentre =
@@ -200,7 +200,7 @@ void dividedVoidFractionSuperquadric::setvoidFraction
     if (nCalls <= 3 || nCalls % 1000 == 0)
     {
         Info<< type() << ": call " << nCalls << ": " << nExcluded
-            << " particles of excluded types; volume budget: particles "
+            << " particles not coupled (couplingFlag 0); volume budget: particles "
             << Vtotal << ", inside the fluid domain " << Vinside << " ("
             << (Vtotal > 0 ? 100.0*(Vtotal - Vinside)/Vtotal : 0.0)
             << " % outside, e.g. wall spheres beyond the walls); markers wrapped"

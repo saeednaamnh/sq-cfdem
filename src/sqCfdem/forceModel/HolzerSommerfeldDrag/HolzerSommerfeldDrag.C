@@ -59,7 +59,7 @@ void HolzerSommerfeldDrag::setForce() const
 
     for (int index = 0; index < particleCloud_.numberOfParticles(); index++)
     {
-        if (sq->excluded(index)) continue;      // e.g. wall spheres: no drag exchange
+        if (sq->excluded(index)) continue;      // not coupled (e.g. wall spheres): no drag
         const label cellI =
             static_cast<label>(particleCloud_.cfdemCloud::cellIDs()[index][0]);
         if (cellI < 0) continue;

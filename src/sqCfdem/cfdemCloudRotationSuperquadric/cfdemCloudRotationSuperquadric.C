@@ -14,8 +14,11 @@ cfdemCloudRotationSuperquadric::cfdemCloudRotationSuperquadric
     idShape_(-1), idBlockinessLoc_(-1), idQuatLoc_(-1),
     idOmega_(-1), idVolumeLoc_(-1), idAreaLoc_(-1), idHdTorque_(-1),
     // No default: e.g. wall spheres in the DEM must be excluded explicitly, because
-    // coupling them makes the fluid cells next to the walls nearly solid.
-    excludeTypes_(couplingProperties_.lookup("excludeTypes"))
+    // coupling them makes the fluid cells next to the walls nearly solid. The flag is
+    // a per-atom 'fix property/atom' scalar (double); atom types are integers and
+    // cannot be pulled through this data path.
+    couplingFlag_(couplingProperties_.lookup("couplingFlag")),
+    idCoupled_(-1)
 {
     // pull=true : DEM -> CFD  (names/types mirror fix_cfd_coupling_force.cpp)
     registerFieldsToDEM("shape",      "vector-atom",     idShape_,        true);
@@ -26,22 +29,17 @@ cfdemCloudRotationSuperquadric::cfdemCloudRotationSuperquadric
     registerFieldsToDEM("area",       "scalar-atom",     idAreaLoc_,      true);
     // push : CFD -> DEM (hydrodynamic torque; LIGGGHTS adds to torque[i])
     registerFieldsToDEM("hdtorque",   "vector-atom",     idHdTorque_,     false);
-    if (excludeTypes_.size())
+    if (couplingFlag_ != "none")
     {
-        registerFieldsToDEM("type", "scalar-atom", idPartTypes(), true);
-        Info<< "sqCfdem: particle types not coupled to the fluid: " << excludeTypes_ << endl;
+        registerFieldsToDEM(couplingFlag_, "scalar-atom", idCoupled_, true);
+        Info<< "sqCfdem: particles with DEM property " << couplingFlag_
+            << " = 0 are not coupled to the fluid" << endl;
     }
 }
 
 bool cfdemCloudRotationSuperquadric::excluded(int i) const
 {
-    if (!excludeTypes_.size()) return false;
-    const label t = particleType(i);
-    forAll(excludeTypes_, k)
-    {
-        if (excludeTypes_[k] == t) return true;
-    }
-    return false;
+    return idCoupled_ >= 0 && fieldsToDEM[idCoupled_][i][0] < 0.5;
 }
 
 cfdemCloudRotationSuperquadric::~cfdemCloudRotationSuperquadric() {}
