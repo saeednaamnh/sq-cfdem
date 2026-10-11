@@ -76,6 +76,7 @@ def cmd_new(a):
         txt=txt.replace(pat,"../DEM/"+pat)
     try:
         txt, group = C.inject_coupling(txt, couple_every=100)
+        txt, wall_type = C.retype_walls(txt)       # wall spheres: own type, excluded below
     except C.CaseError as e:
         print(f"!! {e}"); return 1
 
@@ -142,6 +143,8 @@ nu              nu [ 0 2 -1 0 0 0 0 ] {nu_f:.6e};
     if nv != 1:
         print("!! couplingProperties template: expected one voidageCorrection entry"); return 1
     # void fraction: periodic directions from the mesh written below (cyclic patches)
+    cp += "\n// DEM atom types not coupled to the fluid (wall spheres; see the DEM script)\n"
+    cp += "excludeTypes        (%s);\n" % ("" if wall_type is None else wall_type)
     per=C.mesh_periodic(BLOCKMESH)
     cp, nd = re.subn(r"(dividedSuperquadricProps\s*\{)", "\\1\n    periodicDirections  (%d %d %d);" % per, cp)
     if nd != 1:

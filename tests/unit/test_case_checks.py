@@ -29,13 +29,24 @@ check(C.dem_gravity("fix g all gravity 9.81 vector 0 0 -1\n") == (0.0, 0.0, -9.8
 U = "wallBottom { type fixedValue; value uniform (-1 0 0); } wallTop { type fixedValue; value uniform (1 0 0); }"
 G = "value           ( 0 0 0 );"
 CP = ("forceModels ( HolzerSommerfeldDrag spheroidRotationTorque );\n"
-      "HolzerSommerfeldDragProps { voidageCorrection on; }")
-dem = new.replace("run  5000000", "# run disabled")
+      "HolzerSommerfeldDragProps { voidageCorrection on; }\nexcludeTypes (2);")
+PROPS = ("fix  p_E  all property/global youngsModulus peratomtype 6e6 6e6 6e6\n"
+         "fix  p_kn all property/global kn peratomtypepair 3 2e5 2e5 2e5 2e5 2e5 2e5 2e5 2e5 2e5\n")
+dem, wt = C.retype_walls(PROPS + new.replace("run  5000000", "# run disabled"))
+check(wt == 2 and C.wall_groups(dem) == ["upperGroup", "lowerGroup"], "walls retyped to 2")
+try:
+    C.retype_walls(PROPS.replace("6e6 6e6 6e6", "6e6 5e6 6e6") + T); check(False, "no error for differing properties")
+except C.CaseError:
+    pass
 R = dict((i, s) for i, s, _ in C.audit(dem, G, U, CP, expected_axes=(0.2371, 0.2371, 0.7114)))
 check(all(s == "OK" for s in R.values()), "clean case audits OK: %s" % R)
 R = dict((i, s) for i, s, _ in C.audit(T, "value ( 0 0 -9.81 );", U.replace("(1 0 0)", "(2 0 0)"),
                                         CP.replace("voidageCorrection on;", ""), expected_axes=(0.2, 0.2, 1.0)))
 check([R[k] for k in ("A1", "A2", "A3", "A4", "A5", "A8")] == ["FAIL"] * 6, "broken case: %s" % R)
+R = dict((i, s) for i, s, _ in C.audit(dem, G, U, CP.replace("excludeTypes (2);", ""), blockmesh_txt=None))
+check(R["A10"] == "FAIL", "A10 must fail without excludeTypes")
+R = dict((i, s) for i, s, _ in C.audit(T, G, U, CP))
+check(R["A10"] == "FAIL", "A10 must fail when the walls are not retyped")
 BM = """vertices ( (0 0 0)(15 0 0)(15 10 0)(0 10 0)(0 0 10)(15 0 10)(15 10 10)(0 10 10) );
 boundary
 ( cycXa { type cyclic; neighbourPatch cycXb; faces ((0 4 7 3)); }

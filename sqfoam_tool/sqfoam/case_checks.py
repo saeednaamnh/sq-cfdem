@@ -95,6 +95,59 @@ def shape_of(txt, shapes, tol=1e-6):
     return None
 
 
+def wall_groups(txt):
+    """Groups moved as walls ('fix <id> <group> move linear ...')."""
+    return re.findall(r"(?m)^fix\s+\S+\s+(\S+)\s+move\s+linear\b", txt)
+
+
+def type_properties(txt):
+    """{property: [values per type or type pair]} from 'property/global ... peratomtype[pair]'."""
+    P = {}
+    for m in re.finditer(r"(?m)^fix\s+\S+\s+\S+\s+property/global\s+(\S+)\s+(peratomtype|peratomtypepair)\s+(.*)$", txt):
+        vals = m.group(3).split()
+        if m.group(2) == "peratomtypepair":
+            vals = vals[1:]                     # first entry is the number of types
+        P[m.group(1)] = vals
+    return P
+
+
+def retype_walls(txt, wall_type=2):
+    """Give the wall groups their own atom type, so the fluid side can exclude them.
+    Refuses unless every per-type contact property is identical for all types (then the
+    retyping leaves the DEM physics unchanged). Returns (new_txt, wall_type or None)."""
+    walls = wall_groups(txt)
+    if not walls:
+        return txt, None
+    P = type_properties(txt)
+    if not P:
+        raise CaseError("cannot read the per-type contact properties, so cannot prove that"
+                        " retyping the wall groups leaves the DEM physics unchanged")
+    differ = [k for k, v in P.items() if len(set(v)) != 1]
+    if differ:
+        raise CaseError("per-type contact properties differ between types (%s): retyping the"
+                        " wall groups would change the DEM physics" % ", ".join(differ))
+    # per-type arrays have n entries, per-pair arrays n*n: n is the shortest length,
+    # or its square root if only per-pair arrays are present
+    lens = [len(v) for v in P.values()]
+    m = min(lens)
+    n = int(round(m ** 0.5)) if all(int(round(l ** 0.5)) ** 2 == l for l in lens) else m
+    if wall_type > n:
+        raise CaseError("wall type %d not defined: the DEM script has %d atom types" % (wall_type, n))
+    found = integrator(txt)
+    if not found:
+        raise CaseError("no nve/superquadric integrator in the DEM template")
+    lines = "".join("set             group %s type %d\n" % (g, wall_type) for g in walls)
+    block = ("# wall spheres get their own type (identical contact properties), so that\n"
+             "# the fluid side can exclude them (couplingProperties: excludeTypes)\n" + lines + "\n")
+    return txt.replace(found[0], block + found[0], 1), wall_type
+
+
+def exclude_types(cp_txt):
+    """Tuple of types in the top-level 'excludeTypes (...);' entry, or None if absent."""
+    m = re.search(r"(?m)^\s*excludeTypes\s*\(([^)]*)\)\s*;", cp_txt)
+    return tuple(int(v) for v in m.group(1).split()) if m else None
+
+
 def inject_coupling(txt, couple_every=100):
     """Insert the CFDEM coupling fixes above the nve/superquadric integrator, on the
     integrator's own group. Raises CaseError instead of returning an uncoupled script."""
@@ -241,6 +294,22 @@ def audit(dem_txt, g_txt, u_txt, cp_txt, expected_axes=None, tol=1e-9, blockmesh
             R.append(("A8", "FAIL", "DEM script semi-axes %s differ from the requested shape %s" % (ax, expected_axes)))
         else:
             R.append(("A8", "OK", "semi-axes %s" % (ax,)))
+    ex = exclude_types(cp_txt)
+    walls = wall_groups(dem_txt)
+    if ex is None:
+        R.append(("A10", "FAIL", "excludeTypes not stated in couplingProperties"))
+    elif walls:
+        bad = []
+        for g in walls:
+            m = re.search(r"(?m)^set\s+group\s+" + re.escape(g) + r"\s+type\s+(\d+)", dem_txt)
+            if not m or int(m.group(1)) not in ex:
+                bad.append(g)
+        R.append(("A10", "FAIL", "wall groups %s are coupled to the fluid (not retyped to an"
+                  " excluded type %s)" % (bad, ex)) if bad
+                 else ("A10", "OK", "wall groups %s excluded from the fluid (types %s)" % (walls, ex)))
+    else:
+        R.append(("A10", "OK", "no wall groups; excludeTypes %s" % (ex,)))
+
     if blockmesh_txt is not None and "dividedSuperquadric" in cp_txt:
         want = mesh_periodic(blockmesh_txt)
         have = props_vector(cp_txt, "dividedSuperquadric", "periodicDirections")

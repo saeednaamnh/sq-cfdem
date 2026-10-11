@@ -11,6 +11,7 @@
 #include "locateModel.H"
 #include "quaternion.H"
 #include "spheroidGeometry.H"
+#include "cfdemCloudRotationSuperquadric.H"
 
 namespace Foam
 {
@@ -83,6 +84,12 @@ void dividedVoidFractionSuperquadric::setvoidFraction
     static label nCalls = 0;  ++nCalls;
     label lostThisCall = 0, overflowThisCall = 0, wrappedThisCall = 0, outsideThisCall = 0;
     scalar Vtotal = 0, Vinside = 0;
+    label nExcluded = 0;
+    const cfdemCloudRotationSuperquadric* sq =
+        dynamic_cast<const cfdemCloudRotationSuperquadric*>(&particleCloud_);
+    if (!sq)
+        FatalError << "dividedSuperquadric requires the superquadric cloud"
+                   << " (cfdemSolverPisoSQ)." << abort(FatalError);
     const scalar lo[3] = {domain_.min().x(), domain_.min().y(), domain_.min().z()};
     const scalar hi[3] = {domain_.max().x(), domain_.max().y(), domain_.max().z()};
     const bool per[3] = {periodic_.x() > 0.5, periodic_.y() > 0.5, periodic_.z() > 0.5};
@@ -95,6 +102,10 @@ void dividedVoidFractionSuperquadric::setvoidFraction
             particleVolumes[index][s] = 0.;
         }
         cellsPerParticle_[index][0] = 1.;
+        particleV[index][0] = 0;
+
+        // excluded types (e.g. wall spheres) take no volume and no forces
+        if (sq->excluded(index)) { nExcluded++; continue; }
 
         const label cellCentre =
             static_cast<label>(particleCloud_.cfdemCloud::cellIDs()[index][0]);
@@ -185,9 +196,11 @@ void dividedVoidFractionSuperquadric::setvoidFraction
     reduce(Vtotal, sumOp<scalar>());           reduce(Vinside, sumOp<scalar>());
     reduce(lostThisCall, sumOp<label>());      reduce(overflowThisCall, sumOp<label>());
     reduce(wrappedThisCall, sumOp<label>());   reduce(outsideThisCall, sumOp<label>());
+    reduce(nExcluded, sumOp<label>());
     if (nCalls <= 3 || nCalls % 1000 == 0)
     {
-        Info<< type() << ": call " << nCalls << ": volume budget: particles "
+        Info<< type() << ": call " << nCalls << ": " << nExcluded
+            << " particles of excluded types; volume budget: particles "
             << Vtotal << ", inside the fluid domain " << Vinside << " ("
             << (Vtotal > 0 ? 100.0*(Vtotal - Vinside)/Vtotal : 0.0)
             << " % outside, e.g. wall spheres beyond the walls); markers wrapped"

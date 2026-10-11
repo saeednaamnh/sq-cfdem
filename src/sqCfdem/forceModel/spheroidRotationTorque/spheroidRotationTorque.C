@@ -50,6 +50,7 @@ void spheroidRotationTorque::setForce() const
 
     for (int index = 0; index < particleCloud_.numberOfParticles(); index++)
     {
+        if (sqCloud_->excluded(index)) continue;    // e.g. wall spheres: no torque
         const label cellI =
             static_cast<label>(particleCloud_.cfdemCloud::cellIDs()[index][0]);
         if (cellI < 0) continue;

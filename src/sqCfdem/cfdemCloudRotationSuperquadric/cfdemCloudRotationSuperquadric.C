@@ -12,7 +12,10 @@ cfdemCloudRotationSuperquadric::cfdemCloudRotationSuperquadric
 :
     cfdemCloud(mesh),
     idShape_(-1), idBlockinessLoc_(-1), idQuatLoc_(-1),
-    idOmega_(-1), idVolumeLoc_(-1), idAreaLoc_(-1), idHdTorque_(-1)
+    idOmega_(-1), idVolumeLoc_(-1), idAreaLoc_(-1), idHdTorque_(-1),
+    // No default: e.g. wall spheres in the DEM must be excluded explicitly, because
+    // coupling them makes the fluid cells next to the walls nearly solid.
+    excludeTypes_(couplingProperties_.lookup("excludeTypes"))
 {
     // pull=true : DEM -> CFD  (names/types mirror fix_cfd_coupling_force.cpp)
     registerFieldsToDEM("shape",      "vector-atom",     idShape_,        true);
@@ -23,6 +26,22 @@ cfdemCloudRotationSuperquadric::cfdemCloudRotationSuperquadric
     registerFieldsToDEM("area",       "scalar-atom",     idAreaLoc_,      true);
     // push : CFD -> DEM (hydrodynamic torque; LIGGGHTS adds to torque[i])
     registerFieldsToDEM("hdtorque",   "vector-atom",     idHdTorque_,     false);
+    if (excludeTypes_.size())
+    {
+        registerFieldsToDEM("type", "scalar-atom", idPartTypes(), true);
+        Info<< "sqCfdem: particle types not coupled to the fluid: " << excludeTypes_ << endl;
+    }
+}
+
+bool cfdemCloudRotationSuperquadric::excluded(int i) const
+{
+    if (!excludeTypes_.size()) return false;
+    const label t = particleType(i);
+    forAll(excludeTypes_, k)
+    {
+        if (excludeTypes_[k] == t) return true;
+    }
+    return false;
 }
 
 cfdemCloudRotationSuperquadric::~cfdemCloudRotationSuperquadric() {}

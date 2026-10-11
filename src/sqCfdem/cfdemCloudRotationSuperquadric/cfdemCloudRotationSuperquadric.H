@@ -25,6 +25,7 @@ class cfdemCloudRotationSuperquadric
     mutable int idVolumeLoc_;
     mutable int idAreaLoc_;
     mutable int idHdTorque_;
+    labelList   excludeTypes_;      // DEM atom types not coupled to the fluid (e.g. wall spheres)
 
 public:
     cfdemCloudRotationSuperquadric(const fvMesh& mesh);
@@ -46,6 +47,8 @@ public:
     void quatComponents(int i, scalar& w, scalar& x,
                         scalar& y, scalar& z) const;
     vector omegaSQ(int i) const;
+    //- true if particle i is of a type listed in excludeTypes (not coupled to the fluid)
+    bool excluded(int i) const;
     void addHydroTorque(int i, const vector& T) const;
 };
 

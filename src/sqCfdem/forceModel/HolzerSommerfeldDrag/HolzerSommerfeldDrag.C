@@ -9,6 +9,7 @@
 #include "addToRunTimeSelectionTable.H"
 #include "quaternion.H"
 #include "spheroidGeometry.H"
+#include "cfdemCloudRotationSuperquadric.H"
 
 namespace Foam
 {
@@ -50,8 +51,15 @@ void HolzerSommerfeldDrag::setForce() const
     const volScalarField& nufField = forceSubM(0).nuField();
     const volScalarField& rhoField = forceSubM(0).rhoField();
 
+    const cfdemCloudRotationSuperquadric* sq =
+        dynamic_cast<const cfdemCloudRotationSuperquadric*>(&particleCloud_);
+    if (!sq)
+        FatalError << "HolzerSommerfeldDrag requires the superquadric cloud"
+                   << " (cfdemSolverPisoSQ)." << abort(FatalError);
+
     for (int index = 0; index < particleCloud_.numberOfParticles(); index++)
     {
+        if (sq->excluded(index)) continue;      // e.g. wall spheres: no drag exchange
         const label cellI =
             static_cast<label>(particleCloud_.cfdemCloud::cellIDs()[index][0]);
         if (cellI < 0) continue;
