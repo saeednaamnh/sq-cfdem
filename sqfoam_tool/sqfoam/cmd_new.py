@@ -13,10 +13,31 @@ def _start_restart(tdir, start):
     """Restart file the case starts from: the placement, or the dry baseline's final state."""
     if start == "placed":
         return tdir/"restarts"/"restart_placed.liggghts"
-    cands = sorted((tdir/"restarts").glob("restart_shear*.liggghts"), key=lambda p: p.stat().st_mtime)
+    rdir = tdir/"restarts"
+    final = sorted(rdir.glob("restart_shear*final*.liggghts"))
+    if len(final) == 1:
+        return final[0]                      # the explicitly final state of the dry run
+    if len(final) > 1:
+        raise C.CaseError("--start dry: several final restarts in %s: %s"
+                          % (rdir, ", ".join(p.name for p in final)))
+    cands = sorted(rdir.glob("restart_shear*.liggghts"), key=lambda p: p.stat().st_mtime)
     if not cands:
-        raise C.CaseError("--start dry: no restart_shear*.liggghts in %s" % (tdir/"restarts"))
-    return cands[-1]
+        raise C.CaseError("--start dry: no restart_shear*.liggghts in %s" % rdir)
+    return cands[-1]                         # otherwise the most recent shear restart
+
+
+def _template(tdir):
+    """The DEM shear script of a baseline folder: in_shear.lmp, or the only in_shear*.lmp."""
+    exact = tdir/"in_shear.lmp"
+    if exact.is_file():
+        return exact
+    cands = sorted(tdir.glob("in_shear*.lmp"))
+    if len(cands) == 1:
+        return cands[0]
+    if not cands:
+        raise C.CaseError("no in_shear*.lmp in %s (set TEMPLATE_DIRS in ~/.sqfoam.conf)" % tdir)
+    raise C.CaseError("several DEM scripts in %s (%s): keep one, or name the right one in_shear.lmp"
+                      % (tdir, ", ".join(p.name for p in cands)))
 
 
 def cmd_new(a):
@@ -30,9 +51,10 @@ def cmd_new(a):
 
     # --- DEM script: the shape's own published dry baseline, no fallback ---
     tdir=Path(cfg["DRY_RESTARTS"])/cfg["TEMPLATE_DIRS"][a.shape]
-    tmpl=tdir/"in_shear.lmp"
-    if not tmpl.is_file():
-        print(f"!! no template {tmpl} (set TEMPLATE_DIRS in ~/.sqfoam.conf)"); return 1
+    try:
+        tmpl=_template(tdir)
+    except C.CaseError as e:
+        print(f"!! {e}"); return 1
     txt=tmpl.read_text()
     ax=C.semi_axes(txt)
     if ax is None or max(abs(x-y) for x,y in zip(ax,(s["a"],s["b"],s["c"])))>1e-6:
@@ -152,6 +174,7 @@ runTimeModifiable yes;
         eps=1.0-s["nu_core"]                      # Stokes regime: K ~ eps^(1-chi), chi -> 3.7
         print(f"  with the voidage correction the drag in the core is ~{eps**(1-3.7):.1f}x the isolated value:"
               f" effective St ~ {a.St*eps**(3.7-1):.3g}")
+    print(f"  template: {tmpl}")
     print(f"  start: {a.start}")
     print(f"  restart: {rlink}")
     print(f"  -> sqfoam run {cdir}")
