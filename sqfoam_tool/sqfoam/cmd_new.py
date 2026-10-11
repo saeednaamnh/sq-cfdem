@@ -102,7 +102,9 @@ def cmd_new(a):
     lname="restart_placed.liggghts" if a.start=="placed" else "restart_shear.liggghts"
     link=cdir/"DEM"/"restarts"/lname
     if src_restart.is_file():
-        os.symlink(src_restart, link); rlink=f"linked -> {src_restart}"
+        # COPY, never link: the DEM script writes its checkpoints to restart_shear.liggghts,
+        # and through a link that would overwrite the dry baseline's own restart file.
+        shutil.copy2(src_restart, link); rlink=f"copied from {src_restart}"
     else:
         print(f"!! missing restart {src_restart}"); return 1
 

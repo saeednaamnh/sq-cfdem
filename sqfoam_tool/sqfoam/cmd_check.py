@@ -45,6 +45,17 @@ def cmd_check(a):
                     blockmesh_txt=bm.read_text() if bm.is_file() else None)
         for i, st, m in R:
             print("  [%-4s] %s %s" % (st, i, m))
+        # A11: no restart may be a link out of the case (a checkpoint written through it
+        # would overwrite another case's restart, e.g. the dry baseline's final state)
+        links = [p for p in (case/"DEM"/"restarts").glob("*") if p.is_symlink()]
+        outside = [p for p in links if case.resolve() not in p.resolve().parents]
+        if outside:
+            R.append(("A11", "FAIL", "restart(s) linked out of the case: %s; replace each link by a copy"
+                      " (cp --remove-destination \"$(readlink -f X)\" X)" % ", ".join("%s -> %s" % (p.name, p.resolve()) for p in outside)))
+        else:
+            R.append(("A11", "OK", "no restart linked out of the case"))
+        i, st, msg = R[-1]
+        print("  [%-4s] %s %s" % (st, i, msg))
         if any(st == "FAIL" for _, st, _ in R):
             print("\n  *** do not run this case until every FAIL is fixed ***")
     print()

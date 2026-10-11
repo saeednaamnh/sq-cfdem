@@ -104,8 +104,14 @@ void dividedVoidFractionSuperquadric::setvoidFraction
         cellsPerParticle_[index][0] = 1.;
         particleV[index][0] = 0;
 
-        // particles not coupled to the fluid (e.g. wall spheres): no volume, no forces
-        if (sq->excluded(index)) { nExcluded++; continue; }
+
+        // particles not coupled to the fluid (e.g. wall spheres): no volume, no forces.
+        // Counted only where the particle centre is local (every processor holds all particles).
+        if (sq->excluded(index))
+        {
+            if (particleCloud_.cfdemCloud::cellIDs()[index][0] >= 0) nExcluded++;
+            continue;
+        }
 
         const label cellCentre =
             static_cast<label>(particleCloud_.cfdemCloud::cellIDs()[index][0]);
