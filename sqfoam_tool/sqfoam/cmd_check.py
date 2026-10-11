@@ -21,11 +21,11 @@ def _read_T(path, step=None):
 def cmd_check(a):
     cfg = load(); case = Path(a.case).resolve()
     shape = getattr(a, "shape", None)
+    if not shape:                       # from the particle shape in the case's own DEM script
+        dem = case/"DEM"/"in.liggghts_run"
+        shape = C.shape_of(dem.read_text(), SHAPES) if dem.is_file() else None
     if not shape:
-        for s in SHAPES:
-            if case.name.startswith(s): shape = s; break
-    if not shape:
-        print("!! cannot infer shape; pass --shape prolate_3"); return
+        print("!! cannot infer the shape from DEM/in.liggghts_run; pass --shape prolate_3"); return
 
     run_T = case/"DEM"/"results"/"shear"/"granular_temp.txt"
     dry_T = Path(cfg["DRY_RESTARTS"])/cfg["TEMPLATE_DIRS"][shape]/"results"/"shear"/"granular_temp.txt"

@@ -84,6 +84,17 @@ def semi_axes(txt):
     return v["a"], v["b"], v["c"]
 
 
+def shape_of(txt, shapes, tol=1e-6):
+    """Name of the entry of `shapes` whose semi-axes match the DEM script's a, b, c (or None)."""
+    ax = semi_axes(txt)
+    if ax is None:
+        return None
+    for name, s in shapes.items():
+        if max(abs(x - y) for x, y in zip(ax, (s["a"], s["b"], s["c"]))) <= tol:
+            return name
+    return None
+
+
 def inject_coupling(txt, couple_every=100):
     """Insert the CFDEM coupling fixes above the nve/superquadric integrator, on the
     integrator's own group. Raises CaseError instead of returning an uncoupled script."""
