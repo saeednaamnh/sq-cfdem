@@ -36,5 +36,20 @@ check(all(s == "OK" for s in R.values()), "clean case audits OK: %s" % R)
 R = dict((i, s) for i, s, _ in C.audit(T, "value ( 0 0 -9.81 );", U.replace("(1 0 0)", "(2 0 0)"),
                                         CP.replace("voidageCorrection on;", ""), expected_axes=(0.2, 0.2, 1.0)))
 check([R[k] for k in ("A1", "A2", "A3", "A4", "A5", "A8")] == ["FAIL"] * 6, "broken case: %s" % R)
+BM = """vertices ( (0 0 0)(15 0 0)(15 10 0)(0 10 0)(0 0 10)(15 0 10)(15 10 10)(0 10 10) );
+boundary
+( cycXa { type cyclic; neighbourPatch cycXb; faces ((0 4 7 3)); }
+  cycXb { type cyclic; neighbourPatch cycXa; faces ((1 2 6 5)); }
+  cycYa { type cyclic; neighbourPatch cycYb; faces ((0 1 5 4)); }
+  cycYb { type cyclic; neighbourPatch cycYa; faces ((3 7 6 2)); }
+  wallBottom { type wall; faces ((0 3 2 1)); }
+  wallTop    { type wall; faces ((4 5 6 7)); } );"""
+check(C.mesh_periodic(BM) == (1, 1, 0), "periodic directions from the mesh geometry")
+check(C.mesh_periodic(BM.replace("type cyclic; neighbourPatch cycYb", "type wall; neighbourPatch cycYb")
+                        .replace("type cyclic; neighbourPatch cycYa", "type wall; neighbourPatch cycYa")) == (1, 0, 0), "x only")
+VF = lambda v: CP + "\ndividedSuperquadricProps { alphaMin 0.1; %s }" % v
+for txt, want in ((VF("periodicDirections (1 1 0);"), "OK"), (VF("periodicDirections (1 0 0);"), "FAIL"), (VF(""), "FAIL")):
+    R = dict((i, s) for i, s, _ in C.audit(dem, G, U, txt, blockmesh_txt=BM))
+    check(R.get("A9") == want, "A9 expected %s, got %s" % (want, R.get("A9")))
 print("== test_case_checks: %s" % ("all checks passed" if not fails else "%d FAILED" % fails))
 sys.exit(1 if fails else 0)

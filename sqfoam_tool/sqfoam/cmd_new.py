@@ -141,6 +141,11 @@ nu              nu [ 0 2 -1 0 0 0 0 ] {nu_f:.6e};
     cp, nv = re.subn(r"voidageCorrection\s+\S+?\s*;", f"voidageCorrection       {a.voidage};", cp)
     if nv != 1:
         print("!! couplingProperties template: expected one voidageCorrection entry"); return 1
+    # void fraction: periodic directions from the mesh written below (cyclic patches)
+    per=C.mesh_periodic(BLOCKMESH)
+    cp, nd = re.subn(r"(dividedSuperquadricProps\s*\{)", "\\1\n    periodicDirections  (%d %d %d);" % per, cp)
+    if nd != 1:
+        print("!! couplingProperties template: no dividedSuperquadricProps block"); return 1
     (cfd/"constant"/"couplingProperties").write_text(cp)
     coupl=100*contact_dt(s); dtC=coupl/2.0; end=a.steps*contact_dt(s)
     (cfd/"system"/"controlDict").write_text(
@@ -162,7 +167,7 @@ runTimeModifiable yes;
     # static audit of what was just written; an invalid case is renamed, not left runnable
     R=C.audit((cdir/"DEM"/"in.liggghts_run").read_text(), gf.read_text(),
               (cfd/"0"/"U").read_text(), (cfd/"constant"/"couplingProperties").read_text(),
-              expected_axes=(s["a"],s["b"],s["c"]))
+              expected_axes=(s["a"],s["b"],s["c"]), blockmesh_txt=BLOCKMESH)
     for i,st,m in R: print(f"  [{st:4}] {i} {m}")
     if any(st=="FAIL" for _,st,_ in R):
         bad=cdir.with_name(cdir.name+".INVALID"); cdir.rename(bad)

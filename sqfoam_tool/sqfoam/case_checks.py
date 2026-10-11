@@ -145,8 +145,36 @@ def props_switch(cp_txt, model, key):
     return k.group(1) if k else None
 
 
+def mesh_periodic(bm_txt):
+    """(px, py, pz): 1 for each direction normal to a cyclic patch of a blockMeshDict,
+    found from the patch face geometry (not from patch names)."""
+    vs = bm_txt.split("vertices")[1].split(");")[0]
+    V = [tuple(float(v) for v in m.groups()) for m in
+         re.finditer(r"\(\s*(" + NUM + r")\s+(" + NUM + r")\s+(" + NUM + r")\s*\)", vs)]
+    per = [0, 0, 0]
+    for m in re.finditer(r"\w+\s*\{([^}]*)\}", bm_txt.split("boundary")[-1] if "boundary" in bm_txt else bm_txt):
+        body = m.group(1)
+        if not re.search(r"type\s+cyclic\s*;", body):
+            continue
+        for f in re.finditer(r"\(\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*\)", body):
+            a, b, c = (V[int(i)] for i in f.groups()[:3])
+            u = [b[i] - a[i] for i in range(3)]; w = [c[i] - a[i] for i in range(3)]
+            n = [u[1]*w[2] - u[2]*w[1], u[2]*w[0] - u[0]*w[2], u[0]*w[1] - u[1]*w[0]]
+            per[max(range(3), key=lambda i: abs(n[i]))] = 1
+    return tuple(per)
+
+
+def props_vector(cp_txt, model, key):
+    """Vector value '(x y z)' of 'key' inside '<model>Props { ... }', or None."""
+    m = re.search(model + r"Props\s*\{([^}]*)\}", cp_txt)
+    if not m:
+        return None
+    k = re.search(r"\b" + key + r"\s*\(\s*(" + NUM + r")\s+(" + NUM + r")\s+(" + NUM + r")\s*\)\s*;", m.group(1))
+    return tuple(int(float(v)) for v in k.groups()) if k else None
+
+
 # --------------------------------------------------------------------- audit
-def audit(dem_txt, g_txt, u_txt, cp_txt, expected_axes=None, tol=1e-9):
+def audit(dem_txt, g_txt, u_txt, cp_txt, expected_axes=None, tol=1e-9, blockmesh_txt=None):
     """Static audit of a case. Returns a list of (id, 'OK'|'FAIL'|'WARN', message)."""
     R = []
     integ = integrator(dem_txt)
@@ -213,4 +241,14 @@ def audit(dem_txt, g_txt, u_txt, cp_txt, expected_axes=None, tol=1e-9):
             R.append(("A8", "FAIL", "DEM script semi-axes %s differ from the requested shape %s" % (ax, expected_axes)))
         else:
             R.append(("A8", "OK", "semi-axes %s" % (ax,)))
+    if blockmesh_txt is not None and "dividedSuperquadric" in cp_txt:
+        want = mesh_periodic(blockmesh_txt)
+        have = props_vector(cp_txt, "dividedSuperquadric", "periodicDirections")
+        if have is None:
+            R.append(("A9", "FAIL", "periodicDirections not stated in dividedSuperquadricProps"
+                      " (the mesh is periodic in %s)" % (want,)))
+        elif have != want:
+            R.append(("A9", "FAIL", "periodicDirections %s but the mesh's cyclic patches are %s" % (have, want)))
+        else:
+            R.append(("A9", "OK", "periodicDirections %s, as the mesh's cyclic patches" % (have,)))
     return R

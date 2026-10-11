@@ -40,7 +40,9 @@ def cmd_check(a):
         print("  cannot audit, missing: %s" % ", ".join(missing))
     else:
         s = SHAPES[shape]
-        R = C.audit(*(f.read_text() for f in files), expected_axes=(s["a"], s["b"], s["c"]))
+        bm = case/"CFD"/"system"/"blockMeshDict"
+        R = C.audit(*(f.read_text() for f in files), expected_axes=(s["a"], s["b"], s["c"]),
+                    blockmesh_txt=bm.read_text() if bm.is_file() else None)
         for i, st, m in R:
             print("  [%-4s] %s %s" % (st, i, m))
         if any(st == "FAIL" for _, st, _ in R):

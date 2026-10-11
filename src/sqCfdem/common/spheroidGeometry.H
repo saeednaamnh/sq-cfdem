@@ -212,6 +212,37 @@ inline std::vector<vector> unitBallMarkers(const int n)
     return P;
 }
 
+//- Place a marker relative to the fluid domain [lo, hi]. In a periodic
+//  direction a point outside the box is wrapped back into it (x is modified);
+//  in a non-periodic direction (walls) a point outside the box lies outside the
+//  fluid, and its share of particle volume belongs to no cell.
+//  Returns 0: inside, unchanged; 1: inside after wrapping; 2: outside the domain.
+enum markerPlace { markerInside = 0, markerWrapped = 1, markerOutside = 2 };
+inline int placeMarker(scalar x[3], const scalar lo[3], const scalar hi[3],
+                       const bool periodic[3])
+{
+    bool wrapped = false;
+    for (int d = 0; d < 3; d++)
+    {
+        const scalar L = hi[d] - lo[d];
+        if (periodic[d])
+        {
+            if (x[d] < lo[d] || x[d] >= hi[d])
+            {
+                const scalar f = (x[d] - lo[d])/L;
+                x[d] = lo[d] + L*(f - std::floor(f));
+                if (x[d] >= hi[d]) x[d] = lo[d];          // guard against round-off
+                wrapped = true;
+            }
+        }
+        else if (x[d] < lo[d] || x[d] > hi[d])
+        {
+            return markerOutside;
+        }
+    }
+    return wrapped ? markerWrapped : markerInside;
+}
+
 //- Bretherton constant B = (lam^2-1)/(lam^2+1), lam = c/a
 inline scalar bretherton(const scalar a, const scalar c)
 {

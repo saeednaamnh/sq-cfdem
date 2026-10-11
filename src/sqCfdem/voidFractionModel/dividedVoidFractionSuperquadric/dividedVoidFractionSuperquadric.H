@@ -3,6 +3,7 @@
 #define dividedVoidFractionSuperquadric_H
 
 #include "voidFractionModel.H"
+#include "boundBox.H"
 
 namespace Foam
 {
@@ -16,6 +17,8 @@ class dividedVoidFractionSuperquadric
     label        nSat_;
     scalar       weight_;
     List<vector> unitMarkers_;   // body-frame unit-ball satellite lattice
+    vector       periodic_;      // 1 in each periodic direction of the mesh, else 0
+    boundBox     domain_;        // global bounds of the fluid mesh (all processors)
 
 public:
     // NOTE: name feeds upstream dispatch <model>+"Superquadric"

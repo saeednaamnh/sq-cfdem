@@ -34,8 +34,23 @@ dividedVoidFractionSuperquadric::dividedVoidFractionSuperquadric
     propsDict_(dict.subDict("dividedSuperquadricProps")),
     alphaMin_(readScalar(propsDict_.lookup("alphaMin"))),
     nSat_(propsDict_.lookupOrDefault<label>("nSatellites", 64)),
-    weight_(propsDict_.lookupOrDefault<scalar>("weight", 1.0))
+    weight_(propsDict_.lookupOrDefault<scalar>("weight", 1.0)),
+    // No default: which directions are periodic decides whether a marker beyond
+    // the domain is wrapped to the opposite side or lies outside the fluid.
+    periodic_(propsDict_.lookup("periodicDirections")),
+    domain_(sm.mesh().points(), true)
 {
+    for (direction d = 0; d < vector::nComponents; d++)
+    {
+        if (periodic_[d] != 0 && periodic_[d] != 1)
+        {
+            FatalError << "dividedSuperquadric: periodicDirections must hold 0 or 1"
+                       << " per direction, e.g. (1 1 0); found " << periodic_
+                       << abort(FatalError);
+        }
+    }
+    Info<< "dividedSuperquadric: fluid domain " << domain_ << ", periodic "
+        << periodic_ << endl;
     maxCellsPerParticle_ =
         propsDict_.lookupOrDefault<label>("maxCellsPerParticle", 30);
 
@@ -66,7 +81,11 @@ void dividedVoidFractionSuperquadric::setvoidFraction
 
     const scalarField& cellVol = voidfractionNext_.mesh().V();
     static label nCalls = 0;  ++nCalls;
-    label lostThisCall = 0, overflowThisCall = 0;
+    label lostThisCall = 0, overflowThisCall = 0, wrappedThisCall = 0, outsideThisCall = 0;
+    scalar Vtotal = 0, Vinside = 0;
+    const scalar lo[3] = {domain_.min().x(), domain_.min().y(), domain_.min().z()};
+    const scalar hi[3] = {domain_.max().x(), domain_.max().y(), domain_.max().z()};
+    const bool per[3] = {periodic_.x() > 0.5, periodic_.y() > 0.5, periodic_.z() > 0.5};
 
     for (int index = 0; index < particleCloud_.numberOfParticles(); index++)
     {
@@ -114,13 +133,19 @@ void dividedVoidFractionSuperquadric::setvoidFraction
                 shp.z()*unitMarkers_[s].z()
             );
             vector xw  = pos + (R & xb);   // non-const: locate API takes refs
-            label seed = cellCentre;
 
+            // Periodic directions: wrap into the box. Wall directions: a marker
+            // beyond the domain is outside the fluid, and so is its volume.
+            scalar xp[3] = {xw.x(), xw.y(), xw.z()};
+            const int place = sqGeom::placeMarker(xp, lo, hi, per);
+            if (place == sqGeom::markerOutside) { outsideThisCall++; continue; }
+            if (place == sqGeom::markerWrapped) { wrappedThisCall++; xw = vector(xp[0], xp[1], xp[2]); }
+
+            label seed = cellCentre;
             label cellI = particleCloud_.locateM().findSingleCell(xw, seed);
 
-            // A marker outside this processor's cells (another processor, or
-            // outside the mesh) is deposited in the centre cell, so that no
-            // particle volume is lost; its location is then approximate.
+            // Inside the fluid but in another processor's cells: deposited in the
+            // centre cell, so that no volume is lost (location approximate).
             if (cellI < 0) { cellI = cellCentre; lostThisCall++; }
 
             label slot = -1;
@@ -138,21 +163,38 @@ void dividedVoidFractionSuperquadric::setvoidFraction
             }
 
             const label cellS = slotCell[slot];
-            particleWeights[index][slot] += 1.0/unitMarkers_.size();
             particleVolumes[index][slot] += subV;
             voidfractionNext_[cellS]     -= subV/cellVol[cellS];
         }
         cellsPerParticle_[index][0] = scalar(nSlots);
 
+        // weights: share of the particle's volume inside the fluid, per cell
+        scalar Vin = 0;
+        for (label t = 0; t < nSlots; t++) Vin += particleVolumes[index][t];
+        if (Vin > 0)
+            for (label t = 0; t < nSlots; t++) particleWeights[index][t] = particleVolumes[index][t]/Vin;
+        else
+            particleWeights[index][0] = 1.0;
+        Vtotal  += Vp;
+        Vinside += Vin;
+
         particleV[index][0] = Vp;
     }
 
-    if ((lostThisCall > 0 || overflowThisCall > 0) && (nCalls <= 3 || nCalls % 1000 == 0))
+    // global volume budget (every processor takes part in the reductions)
+    reduce(Vtotal, sumOp<scalar>());           reduce(Vinside, sumOp<scalar>());
+    reduce(lostThisCall, sumOp<label>());      reduce(overflowThisCall, sumOp<label>());
+    reduce(wrappedThisCall, sumOp<label>());   reduce(outsideThisCall, sumOp<label>());
+    if (nCalls <= 3 || nCalls % 1000 == 0)
     {
-        Pout<< type() << ": call " << nCalls << ": " << lostThisCall
-            << " markers outside this processor's cells and " << overflowThisCall
-            << " beyond maxCellsPerParticle were deposited in the particle's"
-            << " centre cell (volume conserved, location approximate)" << endl;
+        Info<< type() << ": call " << nCalls << ": volume budget: particles "
+            << Vtotal << ", inside the fluid domain " << Vinside << " ("
+            << (Vtotal > 0 ? 100.0*(Vtotal - Vinside)/Vtotal : 0.0)
+            << " % outside, e.g. wall spheres beyond the walls); markers wrapped"
+            << " across periodic boundaries " << wrappedThisCall << ", outside the"
+            << " domain " << outsideThisCall << ", on another processor (deposited in"
+            << " the centre cell) " << lostThisCall << ", beyond maxCellsPerParticle "
+            << overflowThisCall << endl;
     }
 
     forAll(voidfractionNext_, cI)
