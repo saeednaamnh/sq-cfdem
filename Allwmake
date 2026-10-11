@@ -1,0 +1,11 @@
+#!/bin/bash
+# Allwmake -- build the sqCfdem library, then the solver.
+# Both are needed after ANY change under src/: the solver embeds the layout of the cloud
+# class (it constructs the cloud itself), so a library rebuilt alone can corrupt memory
+# at start-up if a class has changed.
+set -e
+cd "${0%/*}" || exit 1
+[ -n "$WM_PROJECT" ] || { echo "OpenFOAM environment not loaded (source your bashrc first)"; exit 1; }
+echo "== library: src/sqCfdem";                (cd src/sqCfdem && wmake libso)
+echo "== solver: applications/cfdemSolverPisoSQ"; (cd applications/cfdemSolverPisoSQ && wmake)
+echo "== done: $(ls -la --time-style=+'%d %b %H:%M' $FOAM_USER_LIBBIN/libsqCfdem.so | awk '{print $6,$7,$8}') library, $(ls -la --time-style=+'%d %b %H:%M' $FOAM_USER_APPBIN/cfdemSolverPisoSQ | awk '{print $6,$7,$8}') solver"
